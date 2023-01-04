@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Bubblegum+Sans&family=Bungee+Shade&family=Fuzzy+Bubbles:wght@400;700&display=swap');
+
+body {
+  margin: 0;
+  font-family: -apple-system, fuzzy bubbles,'Bubblegum Sans', 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  background-color:#232931;
+  background-image: url('/public/gifs/stars.gif');
+  background-repeat: repeat;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+}
+
+.gameIcon1 {
+  width: 5%;
+}

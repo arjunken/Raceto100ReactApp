@@ -1,0 +1,45 @@
+{
+  "name": "event-registry-app",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@emotion/react": "^11.10.5",
+    "@emotion/styled": "^11.10.5",
+    "@fontsource/roboto": "^4.5.8",
+    "@mui/icons-material": "^5.10.16",
+    "@mui/material": "^5.10.17",
+    "chance": "^1.1.9",
+    "firebase": "^9.15.0",
+    "react": "^18.2.0",
+    "react-countup": "^6.4.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.6.1",
+    "react-scripts": "5.0.1",
+    "sweetalert": "^2.1.2"
+  },
+  "scripts": {
+    "start": "react-app-rewired start --mode development",
+    "build": "react-app-rewired build"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "react-app-rewired": "^2.2.1"
+  }
+}
