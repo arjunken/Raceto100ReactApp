@@ -1,70 +1,16 @@
-# Getting Started with Create React App
+# Raceto100
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A Dice Game for Kids. Very simple and enjoyable trivia game that is built completely out of Javascript and using [ChanceJS] (https://chancejs.com/index.html) for randomn number generation and [Tabulator] (https://tabulator.info/) for presenting scores in a nicely formatted table.
 
-## Available Scripts
+## Target Audience
 
-In the project directory, you can run:
+This game was built for kids. But, generally anyone likes to play trivia games can try. It's a way to relieve your stress and have fun with your kids.
 
-### `npm start`
+## How does it work?
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Currently, this game can only be played on one device sharing controls with other players. It is best presented on laptops, tablets and desktop computers. In the future, I might introduce a better version to play the game remotely using another device.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### Shakuni - The Robot
 
-### `npm test`
+If you have no one to play, the game presents a robot player called "Shakuni". Shakuni is a mythological character derived from the Hindu epic "Mahabharata", wherein, Shakuni is mastermind behind a dice game that leads Pandavas and Kauravas go for a epical war. In this game, the player Shakuni has been configured to play in three levels which is from naive to clever. You can choose your level and play with him.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
