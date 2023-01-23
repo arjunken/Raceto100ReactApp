@@ -113,10 +113,13 @@ const GameRobo = () => {
         diceResultsBlack = chance.weighted([1, 2, 3, 4, 5, 6], [10, 10, 20, 30, 20, 10]);
       }
       playersData[i].gameSessionData.prevScore = playersData[i].gameSessionData.runningScore;
-      playersData[i].gameSessionData.runningScore += diceResultsRed + diceResultsBlack;
-      // if (playersData[i].gameSessionData.runningScore > 100) {
-      //   playersData[i].gameSessionData.runningScore = playersData[i].gameSessionData.prevScore;
-      // }
+      const score = playersData[i].gameSessionData.runningScore + diceResultsRed + diceResultsBlack;
+      if (score > targetScore) {
+        playersData[i].gameSessionData.prevScore + Math.min(diceResultsRed, diceResultsBlack) <= targetScore &&
+          (playersData[i].gameSessionData.runningScore += Math.min(diceResultsRed, diceResultsBlack));
+      } else {
+        playersData[i].gameSessionData.runningScore += diceResultsRed + diceResultsBlack;
+      }
       //Set Gold and Diamonds Earned
       if (diceResultsBlack === diceResultsRed) {
         playersData[i].gameSessionData.goldEarned += 1;

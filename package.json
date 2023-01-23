@@ -15,11 +15,14 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.6.1",
     "react-scripts": "5.0.1",
-    "sweetalert": "^2.1.2"
+    "react-tabulator": "^0.18.1",
+    "sweetalert": "^2.1.2",
+    "tabulator-tables": "^5.4.3"
   },
   "scripts": {
-    "start": "react-app-rewired start --mode development",
-    "build": "react-app-rewired build"
+    "start": "react-scripts start",
+    "dev": "react-app-rewired start --mode development",
+    "build": "react-scripts build"
   },
   "eslintConfig": {
     "extends": [
