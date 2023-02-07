@@ -1,5 +1,5 @@
 import { Paper, Typography } from "@mui/material";
-import { Box, Container } from "@mui/system";
+import { Box } from "@mui/system";
 
 const DiceAnimation = (props) => {
   if (props.diceImg.length == 1) {

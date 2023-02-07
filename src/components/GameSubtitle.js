@@ -1,9 +1,9 @@
-import { Link, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 import { Box } from "@mui/system";
 //App level imports
 import { globalVariables } from "../globalVariables";
 
-const GameSubtitle = (props) => {
+const GameSubtitle = () => {
   return (
     <Box maxWidth="md" sx={{ marginBottom: "15px" }}>
       <Typography variant="h5" align="center" color="primary.contrastText">

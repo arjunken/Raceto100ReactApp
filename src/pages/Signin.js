@@ -1,10 +1,9 @@
-import { Alert, Button, Paper, TextField, Typography } from "@mui/material";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { Alert, Button, Link, Paper, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Navigation from "../components/Navigation";
-import { auth } from "../firebase";
-import { testEmail, testPassword } from "../globalVariables";
+import { signInUser } from "../firebase";
+import { testEmail, testPassword } from "../utils";
 import AppContainer from "../layouts/AppContainer";
 
 const Signin = () => {
@@ -27,19 +26,20 @@ const Signin = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    signInWithEmailAndPassword(auth, email, password)
-      .then((cred) => {
-        localStorage.setItem("raceto100Auth", cred.user.uid);
+
+    signInUser(email, password)
+      .then((uid) => {
+        localStorage.setItem("raceto100Auth", uid);
         navigate("/profile");
       })
-      .catch((err) => {
+      .catch((ex) => {
         setShowInvalidCredAlert(false);
         setTimeout(() => {
           setShowInvalidCredAlert(true);
         }, 1500);
-        console.error("There is an error signing in user:", err.message);
+        console.error("There is an error signing in user");
       });
   };
 
@@ -75,14 +75,11 @@ const Signin = () => {
           variant="outlined"
           sx={{ mb: 2 }}
         />
-        <TextField
-          id="password"
-          onBlur={inputValidator}
-          label="Password"
-          type="password"
-          autoComplete="current-password"
-          variant="outlined"
-        />
+        <TextField id="password" onBlur={inputValidator} label="Password" type="password" autoComplete="current-password" variant="outlined" />
+        <Typography>
+          Forgot password? <Link href="/resetpassword">Click Here</Link>
+        </Typography>
+
         <Button type="submit" variant="contained">
           Sign In
         </Button>

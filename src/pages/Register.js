@@ -1,14 +1,15 @@
 import { Button, Paper, TextField, Typography } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import AppContainer from "../layouts/AppContainer";
-import { testEmail, testPassword, testUsername } from "../globalVariables";
+import { testEmail, testPassword, testUsername } from "../utils";
 import { useState } from "react";
 import Navigation from "../components/Navigation";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth, colRefP, docRefRD, db } from "../firebase";
-import { addDoc, deleteDoc, doc, getDocs, query, setDoc, where } from "firebase/firestore";
-import swal from "sweetalert";
+//Firebase
+import { handleUserCreation, userNameCheck } from "../firebase";
+//*** */
 import { Player } from "../classes/Player";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 
 const Register = () => {
   const [searchParams] = useSearchParams();
@@ -20,8 +21,9 @@ const Register = () => {
   const [usernameErrorText, setUsernameErrorText] = useState("");
   const [emailErrorText, setEmailErrorText] = useState("");
   const [passwordErrorText, setPasswordErrorText] = useState("");
+  const swalert = withReactContent(Swal);
 
-  const inputValidator = async (e) => {
+  const inputValidator = (e) => {
     switch (e.target.id) {
       case "username":
         //Test for valid username
@@ -37,17 +39,17 @@ const Register = () => {
         } else {
           setUsername(result);
           //Test if it is already registered
-          const q = query(colRefP, where("name", "==", result));
-          const querySnapshot = await getDocs(q);
-          if (!querySnapshot.empty) {
-            setUsernameErrorText("This username is not available. Try different one");
-            setUsername(null);
-            setTimeout(() => {
-              setUsernameErrorText("");
-            }, 1500);
-            setSubmitBtnState(true);
-            return "";
-          }
+          userNameCheck(result).then((res) => {
+            if (res) {
+              setUsernameErrorText("This username is not available. Try different one");
+              setUsername(null);
+              setTimeout(() => {
+                setUsernameErrorText("");
+              }, 1500);
+              setSubmitBtnState(true);
+              return "";
+            }
+          });
         }
         break;
       case "email":
@@ -76,11 +78,13 @@ const Register = () => {
           setSubmitBtnState(true);
         }
         break;
+      default:
+        break;
     }
     username && email && password && setSubmitBtnState(false);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     //Create a player object and store
     const player = new Player(username);
@@ -88,23 +92,15 @@ const Register = () => {
     player.data.isRegistered = true;
 
     //Create the player account and data template
-    await createUserWithEmailAndPassword(auth, email, password)
-      .then((cred) => {
-        setDoc(doc(colRefP, cred.user.uid), player.data)
-          .then(() => {
-            setDoc(doc(db, "playernames", player.data.name), { pid: cred.user.uid });
-            console.log("Document written with ID: ", cred.user.uid);
-          })
-          .catch((err) => {
-            console.log("Error adding new player to the database!");
-            return;
-          });
-        setDoc(doc(colRefP, cred.user.uid, "collections", "robodata"), player.robodata);
-        navigate("/signin?email=" + email);
-        console.log("Registration successful!");
+    handleUserCreation(email, password, username, player.data, player.robodata)
+      .then((uid) => {
+        localStorage.setItem("raceto100Auth", uid);
+        console.log("User has been created successfully with UID: ", uid);
+        navigate("/profile");
       })
-      .catch((err) => {
-        console.error("There is an error registering user:", err.message);
+      .catch((ex) => {
+        console.error("There is an error registering user:", ex.message);
+        swalert.fire("Error!", "There is an existing account", "error");
       });
   };
 

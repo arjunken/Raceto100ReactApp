@@ -1,18 +1,19 @@
-import { Avatar, Button, Divider, Slider, Typography } from "@mui/material";
+import { Avatar, Button, Divider, Typography } from "@mui/material";
 import { Box } from "@mui/system";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, getDocs, query, where } from "firebase/firestore";
+import { signOut } from "firebase/auth";
 import { useContext, useEffect, useState } from "react";
 import { Player } from "../classes/Player";
 import Navigation from "../components/Navigation";
 import PlayOptions from "../components/PlayOptions";
-import ProfileCard from "../components/ProfileCard";
-import { auth, colRefP, db } from "../firebase";
+import { auth, getCurrentUserData } from "../firebase";
 import AppContainer from "../layouts/AppContainer";
 import PlayersContext from "../store/players-context";
 import { useNavigate } from "react-router-dom";
 import { globalVariables } from "../globalVariables";
-import swal from "sweetalert";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+import EditProfile from "../components/EditProfile";
+import PlayerStats from "../components/PlayerStats";
 
 const Profile = () => {
   const [currentUserData, setCurrentUserData] = useState(null);
@@ -21,27 +22,24 @@ const Profile = () => {
   const playerCtx = useContext(PlayersContext);
   const navigate = useNavigate();
   const userId = localStorage.getItem("raceto100Auth");
-  const targetScore = localStorage.getItem("raceto100Target");
-
-  //Function to get data
-  const getCurrentUserData = async () => {
-    const docRef = doc(db, "players", userId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      setCurrentUserData(docSnap.data());
-    } else {
-      setCurrentUserData(null);
-    }
-  };
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const swalert = withReactContent(Swal);
+  const [curUserDataUpdateCounter, setCurUserDataUpdateCounter] = useState(0);
 
   useEffect(() => {
     if (userId) {
-      getCurrentUserData();
-    } else {
-      setCurrentUserData(null);
+      getCurrentUserData(userId)
+        .then((data) => {
+          setCurrentUserData(data);
+        })
+        .catch(() => {
+          setCurrentUserData(null);
+          logoutHandler();
+        });
     }
-  }, []);
+  }, [curUserDataUpdateCounter]);
 
+  //Signout handler
   const logoutHandler = () => {
     signOut(auth)
       .then(() => {
@@ -67,6 +65,7 @@ const Profile = () => {
       //add player into the context store
       const player1 = new Player(currentUserData.name);
       player1.data.isRegistered = true;
+      player1.data.avatarUrl = currentUserData.avatarUrl;
       playerCtx.addPlayer(player1);
       //Get the second player
       const player2 = new Player(globalVariables.ROBOT_SHORTNAME);
@@ -76,7 +75,7 @@ const Profile = () => {
       playerCtx.addPlayer(player2);
       navigate("/gamerobo");
     } else {
-      swal("Oh! You like to play with Remote Players?", "Your interest recorded. It will be available in the future.");
+      swalert.fire("Coming up..", "Remote Player option is currently not supported. Check this option in the future.", "info");
     }
   };
 
@@ -98,30 +97,42 @@ const Profile = () => {
           <Typography variant="h6" sx={{ fontWeight: "bold" }}>
             {currentUserData ? currentUserData.name : ""}
           </Typography>
-          <Button type="button" variant="text" sx={{ ml: "auto" }}>
-            Edit Profile
-          </Button>
+          {showEditProfile ? (
+            <>
+              <Button type="button" variant="text" onClick={() => setShowEditProfile(false)} sx={{ ml: "auto" }}>
+                Back to Profile
+              </Button>
+            </>
+          ) : (
+            <Button type="button" variant="text" onClick={() => setShowEditProfile(!showEditProfile)} sx={{ ml: "auto" }}>
+              Edit Profile
+            </Button>
+          )}
           <Button type="button" variant="text" onClick={logoutHandler}>
             Logout
           </Button>
-          <Avatar alt="avatar" src={currentUserData ? currentUserData.avatarUrl : ""} sx={{ width: 56, height: 56 }} variant="square" />
+          <Avatar
+            alt="avatar"
+            src={currentUserData ? currentUserData.avatarUrl : ""}
+            sx={{ width: 56, height: 56, borderRadius: "50px" }}
+            variant="rounded"
+          />
         </Box>
         <Divider />
-        <Box sx={{ p: 2, width: { md: "40%", xs: "90%" }, m: "auto", textAlign: "center" }}>
-          <Button type="submit" variant="contained" onClick={playHandler} sx={{ mb: 2 }}>
-            {playOptionsToggle ? "Play" : "Close"}
-          </Button>
-          {!playOptionsToggle && <PlayOptions options={playOptionsToggleHandler} mode={mode} goBtnAction={goBtnHandler} />}
-        </Box>
-        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, mb: 3 }}>
-          <ProfileCard contentType="Username" contentValue={currentUserData ? currentUserData.name : ""} bgcolorcode={0} />
-          <ProfileCard contentType="Games Played" contentValue={currentUserData ? currentUserData.gamesPlayed : ""} bgcolorcode={2} />
-          <ProfileCard contentType="Games Won" contentValue={currentUserData ? currentUserData.gamesWon : ""} bgcolorcode={4} />
-          <ProfileCard contentType="Golds Earned" contentValue={currentUserData ? currentUserData.gold : ""} bgcolorcode={6} />
-          <ProfileCard contentType="Diamonds Earned" contentValue={currentUserData ? currentUserData.diamond : ""} bgcolorcode={8} />
-          <ProfileCard contentType="Total Score" contentValue={currentUserData ? currentUserData.totalScore : ""} bgcolorcode={3} />
-          <ProfileCard contentType="Profile Picture" avatar={currentUserData ? currentUserData.avatarUrl : ""} bgcolorcode={5} />
-        </Box>
+
+        {!showEditProfile ? (
+          <>
+            <Box sx={{ p: 2, width: { md: "40%", xs: "90%" }, m: "auto", textAlign: "center" }}>
+              <Button type="submit" variant="contained" onClick={playHandler} sx={{ mb: 2, fontSize: "1.5rem", p: 0, width: "30%" }}>
+                {playOptionsToggle ? "Play" : "Close"}
+              </Button>
+              {!playOptionsToggle && <PlayOptions options={playOptionsToggleHandler} mode={mode} goBtnAction={goBtnHandler} />}
+            </Box>
+            <PlayerStats currentUserData={currentUserData} />
+          </>
+        ) : (
+          <EditProfile currentUserData={currentUserData} dataUpdateCounter={setCurUserDataUpdateCounter} count={curUserDataUpdateCounter} />
+        )}
       </Box>
     </AppContainer>
   );

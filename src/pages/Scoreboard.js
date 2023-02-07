@@ -1,10 +1,10 @@
-import { Paper, Typography } from "@mui/material";
-import { getDocs } from "firebase/firestore";
+import { Paper } from "@mui/material";
 import Navigation from "../components/Navigation";
-import { colRefP } from "../firebase";
+import { getPlayerDocuments } from "../firebase";
 import AppContainer from "../layouts/AppContainer";
 import "react-tabulator/lib/styles.css";
-import "react-tabulator/lib/css/tabulator.min.css";
+//import "react-tabulator/lib/css/tabulator.min.css";
+import "react-tabulator/css/bulma/tabulator_bulma.min.css";
 import { ReactTabulator } from "react-tabulator";
 import { useState } from "react";
 import { useEffect } from "react";
@@ -21,24 +21,26 @@ const columns = [
       width: "50px",
       urlPrefix: "",
       urlSuffix: "",
+      textAlign: "center",
     },
+    hozAlign: "center",
+    vertAlign: "middle",
   },
-  { title: "Player", field: "name", width: 150, headerSort: false },
-  { title: "Games Played", field: "gamesPlayed" },
-  { title: "Games Won", field: "gamesWon" },
-  { title: "Gold Coins", field: "gold" },
-  { title: "Diamond Coins", field: "diamond" },
-  { title: "Total Score", field: "totalScore" },
+  { title: "Player", field: "name", width: 150, headerSort: false, hozAlign: "left", vertAlign: "middle" },
+  { title: "Games Played", field: "gamesPlayed", hozAlign: "center", vertAlign: "middle" },
+  { title: "Games Won", field: "gamesWon", hozAlign: "center", vertAlign: "middle" },
+  { title: "Gold Coins", field: "gold", hozAlign: "center", vertAlign: "middle" },
+  { title: "Diamond Coins", field: "diamond", hozAlign: "center", vertAlign: "middle" },
+  { title: "Total Score", field: "totalScore", hozAlign: "center", vertAlign: "middle" },
 ];
 
 const options = {
-  layout: "fitDataFill", //fit columns to width of table (optional)
-  responsiveLayout: true,
+  responsiveLayout: "hide",
+  layout: "fitDataFill",
   pagination: "local",
   paginationSize: 3,
   paginationSizeSelector: [3, 6, 8, 10],
   movableColumns: true,
-  paginationCounter: "rows",
   initialSort: [
     { column: "totalScore", dir: "desc" },
     { column: "gamesWon", dir: "desc" },
@@ -49,14 +51,9 @@ const Scoreboard = () => {
   const [playersData, setPlayersData] = useState([]);
 
   useEffect(() => {
-    //get all the users documents
-    const playerDocuments = async () => {
-      const docs = await getDocs(colRefP);
-      return docs;
-    };
-    playerDocuments()
-      .then((querySnapshot) => {
-        querySnapshot.forEach((doc) => {
+    getPlayerDocuments()
+      .then((docs) => {
+        docs.forEach((doc) => {
           // doc.data() is never undefined for query doc snapshots
           // setPlayersData(doc.data());
           setPlayersData((preData) => [...preData, doc.data()]);
@@ -71,7 +68,6 @@ const Scoreboard = () => {
     <AppContainer>
       <Navigation />
       <Paper sx={{ p: 2 }}>
-        <Typography> This is the Scoreboard page </Typography>
         <ReactTabulator data={playersData} columns={columns} options={options} />
       </Paper>
     </AppContainer>

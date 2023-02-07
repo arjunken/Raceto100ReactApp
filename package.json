@@ -16,7 +16,8 @@
     "react-router-dom": "^6.6.1",
     "react-scripts": "5.0.1",
     "react-tabulator": "^0.18.1",
-    "sweetalert": "^2.1.2",
+    "sweetalert2": "^11.7.1",
+    "sweetalert2-react-content": "^5.0.7",
     "tabulator-tables": "^5.4.3"
   },
   "scripts": {

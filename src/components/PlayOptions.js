@@ -1,6 +1,5 @@
 import { Box, Button, InputLabel, Slider, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { useState } from "react";
-import { globalVariables } from "../globalVariables";
 
 const PlayOptions = (props) => {
   const [targetScore, setTargetScore] = useState(localStorage.getItem("raceto100Target"));
@@ -10,7 +9,17 @@ const PlayOptions = (props) => {
   };
   return (
     <>
-      <Box sx={{ display: "flex", border: 1, gap: 1, flexDirection: "column", backgroundColor: "#f8f9fa", p: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          border: 1,
+          alignItems: "center",
+          gap: 1,
+          flexDirection: "column",
+          backgroundColor: "#f8f9fa",
+          p: 2,
+        }}
+      >
         <InputLabel>Game Mode</InputLabel>
         <Box>
           <ToggleButtonGroup
@@ -22,7 +31,7 @@ const PlayOptions = (props) => {
             onChange={props.options}
             aria-label="Platform"
           >
-            <ToggleButton value="1">Robo Player</ToggleButton>
+            <ToggleButton value="1">Single Player</ToggleButton>
             <ToggleButton value="2">Remote Players</ToggleButton>
             {props.goBtnAction && (
               <Button type="submit" variant="contained" onClick={props.goBtnAction} style={{ marginLeft: "10px" }}>

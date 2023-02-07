@@ -6,16 +6,18 @@ import React from "react";
 import Home from "../pages/Home";
 import GameTitle from "./GameTitle";
 import GameRobo from "../pages/GameRobo";
-import NotFound from "../pages/NotFound";
+// import NotFound from "../pages/NotFound";
 import Signin from "../pages/Signin";
 import Register from "../pages/Register";
 import Profile from "../pages/Profile";
 import Scoreboard from "../pages/Scoreboard";
 import ProtectedRoute from "../layouts/ProtectedRoute";
 import RedirectHome from "../layouts/RedirectHome";
+import { auth } from "../firebase";
+import ResetPassword from "../pages/ResetPassword";
 
 function App() {
-  const userAuth = localStorage.getItem("raceto100Auth");
+  const userAuth = auth.currentUser;
 
   return (
     <React.Fragment>
@@ -40,6 +42,7 @@ function App() {
           />
           <Route path="/gamerobo" element={<GameRobo />} />
           <Route path="/signin" element={!userAuth ? <Signin /> : <Navigate to="/profile" />} />
+          <Route path="/resetpassword" element={!userAuth ? <ResetPassword /> : <Navigate to="/profile" />} />
           <Route path="/register" element={!userAuth ? <Register /> : <Navigate to="/profile" />} />
           <Route
             path="/scoreboard"

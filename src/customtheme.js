@@ -16,6 +16,10 @@ export const theme = createTheme({
       fontSize: "5rem",
       color: "#FFB703",
     },
+    subtitle1: {
+      fontSize: "1.2rem",
+      fontWeight: "bold",
+    },
     winnerText: {
       fontFamily: "'Bungee Shade','Roboto'",
       fontSize: "3rem",

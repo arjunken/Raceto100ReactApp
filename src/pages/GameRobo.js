@@ -10,8 +10,7 @@ import GameProgressBox from "../components/GameProgressBox";
 import PlayerAvatar from "../components/PlayerAvatar";
 import Gameover from "../components/Gameover";
 import { useNavigate } from "react-router-dom";
-import { doc, increment, updateDoc } from "firebase/firestore";
-import { colRefP } from "../firebase";
+import { saveData } from "../firebase";
 
 const chance = new Chance();
 const passiveDice = globalVariables.default_dice[0];
@@ -36,9 +35,6 @@ const GameRobo = () => {
   let numberOfPlayers = 0;
 
   const handleTabClose = (event) => {
-    // swal("Are you sure you want to leave? Game Scores will be reset.", {
-    //   buttons: ["Oh No!", "Yes!"],
-    // });
     event.preventDefault();
     event.returnValue = "";
   };
@@ -183,30 +179,13 @@ const GameRobo = () => {
   };
 
   //Function to save data to the Firebase
-  const saveData = async (uid) => {
-    await updateDoc(doc(colRefP, uid), {
-      gamesPlayed: increment(1),
-      gamesWon: winner.index == "0" ? increment(1) : increment(0),
-      gold: increment(playersData[0].gameSessionData.goldEarned),
-      diamond: increment(playersData[0].gameSessionData.diamondEarned),
-      totalScore: increment(playersData[0].gameSessionData.runningScore),
-    });
-    await updateDoc(doc(colRefP, uid, "collections", "robodata"), {
-      gamesPlayed: increment(1),
-      gamesWon: winner.index == "1" ? increment(1) : increment(0),
-      gold: increment(playersData[1].gameSessionData.goldEarned),
-      diamond: increment(playersData[1].gameSessionData.diamondEarned),
-      totalScore: increment(playersData[1].gameSessionData.runningScore),
-    });
-  };
-
   //Hanlde Gameover
   if (isGameOver) {
     //Save Game Data to Firebase
     const uid = localStorage.getItem("raceto100Auth");
     // const uid = searchParams.get("uid");
     if (uid) {
-      saveData(uid);
+      saveData(uid, playersData, winner);
     }
 
     return (

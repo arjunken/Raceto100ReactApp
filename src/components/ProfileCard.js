@@ -16,7 +16,7 @@ const ProfileCard = (props) => {
     >
       <Typography> {props.contentType} </Typography>
       {props.avatar ? (
-        <Avatar alt="avatar" src={props.avatar} sx={{ width: 56, height: 56 }} variant="square" />
+        <Avatar alt="avatar" src={props.avatar} sx={{ width: 56, height: 56, borderRadius: "50px" }} variant="square" />
       ) : (
         <Typography> {props.contentValue} </Typography>
       )}

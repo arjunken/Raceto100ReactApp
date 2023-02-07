@@ -1,17 +1,17 @@
-import { Box, TextField, InputLabel, Button, ToggleButtonGroup, ToggleButton, Paper, Slider } from "@mui/material";
+import { Box, TextField, Button, Paper, Typography, Avatar } from "@mui/material";
 import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import swal from "sweetalert";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 
 //App level imports
 import PlayersContext from "../store/players-context";
 import GameSubtitle from "../components/GameSubtitle";
 import AppContainer from "../layouts/AppContainer";
 import { Player } from "../classes/Player";
-import { globalVariables, testUsername } from "../globalVariables";
+import { globalVariables } from "../globalVariables";
+import { testUsername } from "../utils";
 import Navigation from "../components/Navigation";
-import { getDocs, query, where } from "firebase/firestore";
-import { colRefP } from "../firebase";
 import PlayOptions from "../components/PlayOptions";
 
 const Home = () => {
@@ -21,6 +21,9 @@ const Home = () => {
   const [player1Name, setPlayer1Name] = useState("name");
   const [submitBtnState, setSubmitBtnState] = useState(true);
   const [errorText, setErrorText] = useState("");
+  const [showGameOptions, setShowGameOptions] = useState(false);
+  const [avatarSelected, setAvatarSelected] = useState(0);
+  const swalert = withReactContent(Swal);
 
   const handleGameModeSelection = (e, newmode) => {
     setMode(e.target.value);
@@ -40,7 +43,7 @@ const Home = () => {
     } else {
       setPlayer1Name(result);
       //Test if it is already registered
-      // const q = query(colRefP, where("name", "==", result));
+      // const q = query(colRefP, where("name", "===", result));
       // const querySnapshot = await getDocs(q);
       // if (!querySnapshot.empty) {
       //   setErrorText("This username is not available. Try different one");
@@ -59,6 +62,7 @@ const Home = () => {
     event.preventDefault();
     if (mode === "1") {
       const player1 = new Player(player1Name);
+      player1.data.avatarUrl = `/avatars/avatar${avatarSelected}.jpg`;
       //Flushout previously stored sessions in the context store
       playerCtx.resetPlayers();
       //add player into the context store
@@ -71,7 +75,7 @@ const Home = () => {
       navigate("/gamerobo");
     } else {
       console.log("Remote playing is coming soon!");
-      swal("Oh! You like to play with Remote Players?", "Your interest recorded. It will be available in the future.");
+      swalert.fire("Coming up..", "Remote Player option is currently not supported. Check this option in the future.", "info");
     }
   };
 
@@ -79,27 +83,56 @@ const Home = () => {
     <AppContainer>
       <Navigation />
       <GameSubtitle />
-      <Paper sx={{ p: 2, width: { md: "40%", xs: "90%" } }}>
+      <Paper sx={{ p: 2, width: { md: "30%", xs: "70%" } }}>
         <Box
           component="form"
           onSubmit={handleSubmit}
           sx={{ display: "flex", flexDirection: "column", gap: 2, justifyContent: "center", alignItems: "center" }}
         >
-          <TextField
-            id="uniqueName"
-            name="uniqueName"
-            label="Username"
-            onKeyUp={inputValidator}
-            variant="outlined"
-            required
-            fullWidth
-            error={!player1Name ? true : false}
-            helperText={errorText}
-          />
-          <PlayOptions options={handleGameModeSelection} mode={mode} />
-          <Button type="submit" variant="contained" disabled={submitBtnState ? true : false} fullWidth>
-            Go
-          </Button>
+          {!showGameOptions ? (
+            <>
+              <TextField
+                id="uniqueName"
+                name="uniqueName"
+                label="Usernames"
+                onKeyUp={inputValidator}
+                variant="outlined"
+                required
+                fullWidth
+                error={!player1Name ? true : false}
+                helperText={errorText}
+              />
+              {/* <PlayOptions options={handleGameModeSelection} mode={mode} /> */}
+              <Button variant="contained" onClick={() => setShowGameOptions(true)} disabled={submitBtnState ? true : false} fullWidth>
+                Go
+              </Button>
+            </>
+          ) : (
+            <>
+              <Typography> Welcome, {player1Name}!</Typography>
+              <PlayOptions options={handleGameModeSelection} mode={mode} />
+              <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap" }}>
+                <Button sx={avatarSelected === 0 ? { background: "#e1e1f1" } : { background: "" }} onClick={() => setAvatarSelected(0)}>
+                  <Avatar alt="default avatar" src="/avatars/avatar0.jpg" />
+                </Button>
+                <Button sx={avatarSelected === 1 ? { background: "#e1e1f1" } : { background: "" }} onClick={() => setAvatarSelected(1)}>
+                  <Avatar alt="boy avatar" src="/avatars/avatar1.jpg" />
+                </Button>
+                <Button sx={avatarSelected === 2 ? { background: "#e1e1f1" } : { background: "" }} onClick={() => setAvatarSelected(2)}>
+                  <Avatar alt="girl avatar" src="/avatars/avatar2.jpg" />
+                </Button>
+                <Button sx={avatarSelected === 3 ? { background: "#e1e1f1" } : { background: "" }} onClick={() => setAvatarSelected(3)}>
+                  <Avatar alt="girl avatar" src="/avatars/avatar3.jpg" />
+                </Button>
+                <Button sx={avatarSelected === 4 ? { background: "#e1e1f1" } : { background: "" }} onClick={() => setAvatarSelected(4)}>
+                  <Avatar alt="boy avatar" src="/avatars/avatar4.jpg" />
+                </Button>
+              </Box>
+              <Button onClick={handleSubmit} variant="contained" fullWidth>
+                Go
+              </Button>
+            </>
+          )}
         </Box>
       </Paper>
     </AppContainer>

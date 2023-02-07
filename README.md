@@ -1,6 +1,6 @@
 # Raceto100
 
-A Dice Game for Kids. Very simple and enjoyable trivia game that is built completely out of Javascript and using [ChanceJS] (https://chancejs.com/index.html) for randomn number generation and [Tabulator] (https://tabulator.info/) for presenting scores in a nicely formatted table.
+A Dice Game for Kids. Very simple and enjoyable trivia game that is built completely out of Javascript and uses [ChanceJS] (https://chancejs.com/index.html) for random number generation and [Tabulator] (https://tabulator.info/) for presenting scores in a nicely formatted table.
 
 ## Target Audience
 
