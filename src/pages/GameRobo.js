@@ -1,4 +1,4 @@
-import { Box, Button, Container, Grid, LinearProgress, Link, Typography } from "@mui/material";
+import { Box, Button, Container, Grid, LinearProgress, Link, Stack, Switch, Typography } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import Chance from "chance";
 //App level imports
@@ -11,6 +11,7 @@ import PlayerAvatar from "../components/PlayerAvatar";
 import Gameover from "../components/Gameover";
 import { useNavigate } from "react-router-dom";
 import { saveData } from "../firebase";
+import { useRef } from "react";
 
 const chance = new Chance();
 const passiveDice = globalVariables.default_dice[0];
@@ -29,6 +30,8 @@ const GameRobo = () => {
   const [winner, setWinner] = useState({});
   const navigate = useNavigate();
   const targetScore = localStorage.getItem("raceto100Target");
+  const [autoRoll, setAutoRoll] = useState(false);
+  const switchState = useRef();
   // const [searchParams] = useSearchParams();
 
   let playersData = [];
@@ -97,6 +100,7 @@ const GameRobo = () => {
     setRollBtnState(true);
     // Loop all the players
     let i = 0;
+
     do {
       setRDiceImg(globalVariables.red_dice_faces[0]);
       setBDiceImg(globalVariables.black_dice_faces[0]);
@@ -146,6 +150,10 @@ const GameRobo = () => {
         return;
       }
       i++;
+      if (i === numberOfPlayers) {
+        const autoRoll = switchState.current.firstChild.checked;
+        autoRoll && (i = 0);
+      }
       setTurn(i);
       setDiceScoreSum(0);
     } while (i < numberOfPlayers);
@@ -200,6 +208,10 @@ const GameRobo = () => {
       </Box>
     );
   }
+  //Switch Handler
+  const switchHandler = (e) => {
+    e.target.checked ? setAutoRoll(true) : setAutoRoll(false);
+  };
 
   //Default component return
   return (
@@ -276,6 +288,11 @@ const GameRobo = () => {
       >
         Roll
       </Button>
+      <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ mt: 2 }}>
+        <Typography color="white">Manual Roll</Typography>
+        <Switch ref={switchState} onChange={switchHandler} size="large" />
+        <Typography color="white">Auto Roll</Typography>
+      </Stack>
     </Box>
   );
 };
