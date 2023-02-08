@@ -1,4 +1,4 @@
-import { Paper } from "@mui/material";
+import { Container, Paper } from "@mui/material";
 import Navigation from "../components/Navigation";
 import { getPlayerDocuments } from "../firebase";
 import AppContainer from "../layouts/AppContainer";
@@ -14,6 +14,9 @@ const columns = [
   {
     title: "Avatar",
     field: "avatarUrl",
+    width: 80,
+    formatter: "responsiveCollapse",
+    resizable: false,
     formatter: "image",
     headerSort: false,
     formatterParams: {
@@ -23,24 +26,24 @@ const columns = [
       urlSuffix: "",
       textAlign: "center",
     },
-    hozAlign: "center",
+    hozAlign: "left",
     vertAlign: "middle",
   },
-  { title: "Player", field: "name", width: 150, headerSort: false, hozAlign: "left", vertAlign: "middle" },
-  { title: "Games Played", field: "gamesPlayed", hozAlign: "center", vertAlign: "middle" },
-  { title: "Games Won", field: "gamesWon", hozAlign: "center", vertAlign: "middle" },
-  { title: "Gold Coins", field: "gold", hozAlign: "center", vertAlign: "middle" },
-  { title: "Diamond Coins", field: "diamond", hozAlign: "center", vertAlign: "middle" },
-  { title: "Total Score", field: "totalScore", hozAlign: "center", vertAlign: "middle" },
+  { title: "Player", field: "name", minWidth: 80, headerSort: false, hozAlign: "left", resizable: false, vertAlign: "middle" },
+  { title: "Total Score", field: "totalScore", hozAlign: "center", minWidth: 150, resizable: false, vertAlign: "middle" },
+  { title: "Games Played", field: "gamesPlayed", minWidth: 80, hozAlign: "center", resizable: false, vertAlign: "middle" },
+  { title: "Games Won", field: "gamesWon", minWidth: 80, hozAlign: "center", resizable: false, vertAlign: "middle" },
+  { title: "Gold Coins", field: "gold", minWidth: 80, hozAlign: "center", resizable: false, vertAlign: "middle" },
+  { title: "Diamond Coins", field: "diamond", minWidth: 80, hozAlign: "center", resizable: false, vertAlign: "middle" },
 ];
 
 const options = {
-  responsiveLayout: "hide",
+  responsiveLayout: "collapse",
   layout: "fitDataFill",
   pagination: "local",
   paginationSize: 3,
   paginationSizeSelector: [3, 6, 8, 10],
-  movableColumns: true,
+  movableColumns: false,
   initialSort: [
     { column: "totalScore", dir: "desc" },
     { column: "gamesWon", dir: "desc" },
@@ -67,9 +70,9 @@ const Scoreboard = () => {
   return (
     <AppContainer>
       <Navigation />
-      <Paper sx={{ p: 2 }}>
+      <Container sx={{ p: 0 }}>
         <ReactTabulator data={playersData} columns={columns} options={options} />
-      </Paper>
+      </Container>
     </AppContainer>
   );
 };
