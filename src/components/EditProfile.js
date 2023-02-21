@@ -83,7 +83,7 @@ const EditProfile = ({ currentUserData, dataUpdateCounter, count }) => {
           .then(() => {
             console.log("Username updated!");
             dataUpdateCounter(count + 1);
-            Swal.fire({
+            swalert.fire({
               position: "center",
               icon: "success",
               title: "Username updated!",
@@ -135,7 +135,7 @@ const EditProfile = ({ currentUserData, dataUpdateCounter, count }) => {
             handleSignout();
           })
           .catch((ex) => {
-            Swal.fire(swalertOptionsFail);
+            swalert.fire(swalertOptionsFail);
           });
       }
     });
@@ -168,11 +168,11 @@ const EditProfile = ({ currentUserData, dataUpdateCounter, count }) => {
     updateUserPassword(pwd)
       .then(() => {
         console.log("Password updated successfully!");
-        Swal.fire(swalertOptionsSuccess);
+        swalert.fire(swalertOptionsSuccess);
       })
       .catch((ex) => {
         console.error("Error updating the password: ", ex.message);
-        Swal.fire(swalertOptionsFail);
+        swalert.fire(swalertOptionsFail);
       });
   };
 
@@ -190,24 +190,25 @@ const EditProfile = ({ currentUserData, dataUpdateCounter, count }) => {
 
   //Delete Account Handler
   const deleteAccountHandler = () => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "All your data will be erased. You won't be able to revert this action!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
-    })
+    swalert
+      .fire({
+        title: "Are you sure?",
+        text: "All your data will be erased. You won't be able to revert this action!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
+      })
       .then(async (result) => {
         if (result.isConfirmed) {
           deleteUsersData(currentUserData.name)
             .then(() => {
-              Swal.fire("Account Deleted!", "Your account has been deleted. You have been signed out automatically.", "success");
+              swalert.fire("Account Deleted!", "Your account has been deleted. You have been signed out automatically.", "success");
               handleSignout();
             })
             .catch((ex) => {
-              Swal.fire("Could not delete!", "There was an error deleting the user.", "error");
+              swalert.fire("Could not delete!", "There was an error deleting the user.", "error");
               console.error("There was an error deleting the user", ex.message);
             });
         }
@@ -238,7 +239,7 @@ const EditProfile = ({ currentUserData, dataUpdateCounter, count }) => {
   };
 
   const uploadPicHandler = async () => {
-    const { value: file } = await Swal.fire({
+    const { value: file } = await swalert.fire({
       title: "Select image",
       text: "Images should be in jpg, jpeg, bmp format",
       input: "file",
@@ -250,7 +251,7 @@ const EditProfile = ({ currentUserData, dataUpdateCounter, count }) => {
 
     if (file) {
       if (file.size / 1024 > globalVariables.avatarFileSizeInKb) {
-        Swal.fire("File size is big!", "We can't accept images more than 200kb. Upload a smaller size image.", "error");
+        swalert.fire("File size is big!", "We can't accept images more than 200kb. Upload a smaller size image.", "error");
       } else {
         const filename = currentUserData.name + "." + file.name.split(".").pop();
         uploadAvatarToFb(file, filename)
@@ -316,13 +317,7 @@ const EditProfile = ({ currentUserData, dataUpdateCounter, count }) => {
               }}
             >
               {avatarList.map((item, i) => (
-                <AvatarListItem
-                  key={i}
-                  item={item}
-                  selectedAvatar={avatarContainer.index}
-                  index={i}
-                  avatarClickHandler={avatarClickHandler}
-                />
+                <AvatarListItem key={i} item={item} selectedAvatar={avatarContainer.index} index={i} avatarClickHandler={avatarClickHandler} />
               ))}
             </Paper>
           )}

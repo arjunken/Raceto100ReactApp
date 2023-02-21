@@ -15,7 +15,7 @@ import Navigation from "../components/Navigation";
 import PlayOptions from "../components/PlayOptions";
 
 const Home = () => {
-  const [mode, setMode] = useState("1");
+  const [mode, setMode] = useState("2");
   const navigate = useNavigate();
   const playerCtx = useContext(PlayersContext);
   const [player1Name, setPlayer1Name] = useState("name");
@@ -74,8 +74,16 @@ const Home = () => {
       playerCtx.addPlayer(player2);
       navigate("/gamerobo");
     } else {
-      console.log("Remote playing is coming soon!");
-      swalert.fire("Coming up..", "Remote Player option is currently not supported. Check this option in the future.", "info");
+      // console.log("Remote playing is coming soon!");
+      // swalert.fire("Coming up..", "Remote Player option is currently not supported. Check this option in the future.", "info");
+      const player = new Player(player1Name);
+      player.data.avatarUrl = `/avatars/avatar${avatarSelected}.jpg`;
+      //Flushout previously stored sessions in the context store
+      playerCtx.resetPlayers();
+      //add player into the context store
+      playerCtx.addPlayer(player);
+      //Send the player1 game server
+      navigate("/remotegame");
     }
   };
 

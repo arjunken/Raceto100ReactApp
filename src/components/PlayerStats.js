@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import ProfileCard from "./ProfileCard";
 
-const PlayerStats = ({ currentUserData }) => {
+const PlayerStats = ({ currentUserData, showEditProfile }) => {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, mb: 3 }}>
       <ProfileCard contentType="Username" contentValue={currentUserData ? currentUserData.name : ""} bgcolorcode={0} />
@@ -10,7 +10,12 @@ const PlayerStats = ({ currentUserData }) => {
       <ProfileCard contentType="Golds Earned" contentValue={currentUserData ? currentUserData.gold : ""} bgcolorcode={6} />
       <ProfileCard contentType="Diamonds Earned" contentValue={currentUserData ? currentUserData.diamond : ""} bgcolorcode={8} />
       <ProfileCard contentType="Total Score" contentValue={currentUserData ? currentUserData.totalScore : ""} bgcolorcode={3} />
-      <ProfileCard contentType="Profile Picture" avatar={currentUserData ? currentUserData.avatarUrl : ""} bgcolorcode={5} />
+      <ProfileCard
+        contentType="Profile Picture"
+        avatar={currentUserData ? currentUserData.avatarUrl : ""}
+        bgcolorcode={5}
+        showEditProfile={showEditProfile}
+      />
     </Box>
   );
 };

@@ -16,3 +16,7 @@ body {
 .gameIcon1 {
   width: 5%;
 }
+
+.no-border {
+  border: 0 !important;
+}

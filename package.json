@@ -1,5 +1,5 @@
 {
-  "name": "event-registry-app",
+  "name": "raceto100-react-app",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -9,14 +9,19 @@
     "@mui/icons-material": "^5.10.16",
     "@mui/material": "^5.10.17",
     "chance": "^1.1.9",
+    "date-fns": "^2.29.3",
     "firebase": "^9.15.0",
+    "lodash": "^4.17.21",
+    "nanoid": "^4.0.1",
     "react": "^18.2.0",
+    "react-countdown": "^2.3.5",
     "react-countup": "^6.4.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.6.1",
     "react-scripts": "5.0.1",
     "react-spinners": "^0.13.8",
     "react-tabulator": "^0.18.1",
+    "socket.io-client": "^4.6.0",
     "sweetalert2": "^11.7.1",
     "sweetalert2-react-content": "^5.0.7",
     "tabulator-tables": "^5.4.3"

@@ -11,13 +11,17 @@ import { theme } from "./customtheme.js";
 import { BrowserRouter } from "react-router-dom";
 import { PlayersContextProvider } from "./store/players-context";
 import "./firebase";
+import { SocketContextProvider } from "./store/socket-context";
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
   <ThemeProvider theme={theme}>
     <PlayersContextProvider>
       <BrowserRouter>
-        <App />
+        <SocketContextProvider>
+          <App />
+        </SocketContextProvider>
       </BrowserRouter>
     </PlayersContextProvider>
   </ThemeProvider>

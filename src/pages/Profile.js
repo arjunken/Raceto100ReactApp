@@ -1,4 +1,4 @@
-import { Avatar, Button, Divider, Typography } from "@mui/material";
+import { Avatar, Button, Divider, Link, Typography } from "@mui/material";
 import { Box } from "@mui/system";
 import { signOut } from "firebase/auth";
 import { useContext, useEffect, useState } from "react";
@@ -25,7 +25,6 @@ const Profile = () => {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const swalert = withReactContent(Swal);
   const [curUserDataUpdateCounter, setCurUserDataUpdateCounter] = useState(0);
-
   useEffect(() => {
     if (userId) {
       getCurrentUserData(userId)
@@ -111,12 +110,14 @@ const Profile = () => {
           <Button type="button" variant="text" onClick={logoutHandler}>
             Logout
           </Button>
-          <Avatar
-            alt="avatar"
-            src={currentUserData ? currentUserData.avatarUrl : ""}
-            sx={{ width: 56, height: 56, borderRadius: "50px" }}
-            variant="rounded"
-          />
+          <Button onClick={() => setShowEditProfile(!showEditProfile)}>
+            <Avatar
+              alt="avatar"
+              src={currentUserData ? currentUserData.avatarUrl : ""}
+              sx={{ width: 56, height: 56, borderRadius: "50px" }}
+              variant="rounded"
+            />
+          </Button>
         </Box>
         <Divider />
 
@@ -128,7 +129,7 @@ const Profile = () => {
               </Button>
               {!playOptionsToggle && <PlayOptions options={playOptionsToggleHandler} mode={mode} goBtnAction={goBtnHandler} />}
             </Box>
-            <PlayerStats currentUserData={currentUserData} />
+            <PlayerStats currentUserData={currentUserData} showEditProfile={setShowEditProfile} />
           </>
         ) : (
           <EditProfile currentUserData={currentUserData} dataUpdateCounter={setCurUserDataUpdateCounter} count={curUserDataUpdateCounter} />
