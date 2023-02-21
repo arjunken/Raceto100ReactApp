@@ -202,8 +202,6 @@ const RemoteGameLobby = () => {
     });
   };
 
-  console.log(privateInvites);
-
   return (
     <AppContainer>
       <Paper sx={{ display: "flex", flexDirection: "column", gap: 2, p: 3, width: { xs: "100%", md: "80%" } }}>
