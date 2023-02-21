@@ -26,5 +26,6 @@ export const globalVariables = {
 };
 export const lightColors = ["#eae4e9", "#fff1e6", "#fde2e4", "#fad2e1", "#e2ece9", "#bee1e6", "#f0efeb", "#dfe7fd", "#cddafd"];
 export const invitationExpiry = 600000;
+export const inviteMaxJoins = 2;
 //Joining Code format
 export const nanoid = customAlphabet("1234567890abcdef", 6);

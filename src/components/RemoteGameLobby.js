@@ -12,7 +12,7 @@ import withReactContent from "sweetalert2-react-content";
 import _ from "lodash";
 import SocketContext from "../store/socket-context";
 import PageLoading from "../layouts/PageLoading";
-import { nanoid } from "../globalVariables";
+import { inviteMaxJoins, nanoid } from "../globalVariables";
 
 const RemoteGameLobby = () => {
   // const navigate = useNavigate();
@@ -30,16 +30,6 @@ const RemoteGameLobby = () => {
     newJoin: false,
     inviteCancelled: false,
   });
-  const [maxJoins, setMaxJoins] = useState(2);
-
-  ////get the maximum joins
-  useEffect(() => {
-    if (socket) {
-      socket.emit("max_joins", (max) => {
-        setMaxJoins(max);
-      });
-    }
-  }, [socket, maxJoins]);
 
   useEffect(() => {
     if (socket) {
@@ -62,6 +52,7 @@ const RemoteGameLobby = () => {
       socket.on("player_exited", (socketId) => {
         setPrivateInvites(
           privateInvites.filter((invite) => {
+            invite.curRoomSize--;
             return invite.socketId !== socketId;
           })
         );
@@ -107,6 +98,7 @@ const RemoteGameLobby = () => {
           player.gameId = nanoid(5);
           player.socketId = socket.id;
           player.curRoomSize = 1;
+          player.maxJoins = inviteMaxJoins;
           player.inviteCreatedAt = Date.now();
           setMyGameInvite(player);
           socket.emit("newInvite", player);
@@ -195,12 +187,12 @@ const RemoteGameLobby = () => {
     // }
     console.log("Requesting server to join invitation...");
 
-    socket.emit("joinInvite", invite.socketId, (res) => {
-      if (res.joins <= res.maxJoins) {
+    socket.emit("joinInvite", invite.socketId, invite.gameId, invite.maxJoins, (res) => {
+      if (res) {
         setPrivateInvites(
           privateInvites.map((item) => {
             if (item.socketId === invite.socketId) {
-              return { ...item, curRoomSize: res.joins };
+              return { ...item, curRoomSize: invite.curRoomSize + 1 };
             } else {
               return item;
             }
@@ -209,6 +201,8 @@ const RemoteGameLobby = () => {
       }
     });
   };
+
+  console.log(privateInvites);
 
   return (
     <AppContainer>
@@ -267,7 +261,7 @@ const RemoteGameLobby = () => {
                   key={invite.socketId}
                   invite={invite}
                   roomSize={invite.curRoomSize}
-                  maxJoins={maxJoins}
+                  maxJoins={invite.maxJoins}
                   myGameInvite={myGameInvite}
                   expiryHandlerOthers={() => privateInvitesExpiryHandler(invite.socketId)}
                   joinInviteHandler={() => joinInviteHandler(invite)}

@@ -59,7 +59,7 @@ const InviteCard = ({ invite, joiningCode, expiryHandlerSelf, expiryHandlerOther
           >
             Join
           </Button>
-          {roomSize >= maxJoins && <Typography variant="caption">Play in Progress!</Typography>}
+          {roomSize >= maxJoins && <Typography variant="caption">Room is Full!</Typography>}
           {myGameInvite && <Typography variant="caption">Can't join while inviting others</Typography>}
         </Box>
       )}
