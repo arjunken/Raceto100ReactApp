@@ -1,21 +1,21 @@
 import { Typography } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
-import SocketContext from "../store/socket-context";
+// import SocketContext from "../store/socket-context";
 
 const WaitingRoom = () => {
   const [personWaiting, setPersonWaiting] = useState(null);
-  const socket = useContext(SocketContext).socket;
+  // const socket = useContext(SocketContext).socket;
 
-  useEffect(() => {
-    if (socket) {
-      socket.on("totalJoins", (totalJoins) => {
-        setPersonWaiting(totalJoins);
-      });
-    }
-    return () => {
-      socket.off("totalJoins");
-    };
-  }, [socket, personWaiting]);
+  // useEffect(() => {
+  //   if (socket) {
+  //     socket.on("totalJoins", (totalJoins) => {
+  //       setPersonWaiting(totalJoins);
+  //     });
+  //   }
+  //   return () => {
+  //     socket.off("totalJoins");
+  //   };
+  // }, [socket, personWaiting]);
 
   return (
     <>

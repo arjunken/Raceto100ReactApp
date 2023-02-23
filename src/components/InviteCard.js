@@ -18,8 +18,8 @@ const InviteCard = ({ invite, joiningCode, expiryHandlerSelf, expiryHandlerOther
         backgroundColor: lightColors[Math.floor(Math.random() * 8 + 1)],
       }}
     >
-      <Avatar alt="avatar" src={invite.data.avatarUrl} sx={{ width: 56, height: 56, borderRadius: "50px" }} variant="square" />
-      <Typography> {invite.data.name}</Typography>
+      {/* <Avatar alt="avatar" src={invite.data.avatarUrl} sx={{ width: 56, height: 56, borderRadius: "50px" }} variant="square" />
+      <Typography> {invite.data.name}</Typography> */}
       {joiningCode ? (
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mx: "auto" }}>
           <Typography variant="caption">Joining Code: {invite.gameId}</Typography>
@@ -32,7 +32,7 @@ const InviteCard = ({ invite, joiningCode, expiryHandlerSelf, expiryHandlerOther
         </Box>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mx: "auto" }}>
-          <Typography variant="caption">
+          {/* <Typography variant="caption">
             <TimeDisplayCreatedAt createdTime={invite.inviteCreatedAt} />
           </Typography>
           <Typography variant="caption">
@@ -41,7 +41,7 @@ const InviteCard = ({ invite, joiningCode, expiryHandlerSelf, expiryHandlerOther
               createdTime={invite.inviteCreatedAt}
               expiryHandlerOthers={expiryHandlerOthers}
             />
-          </Typography>
+          </Typography> */}
         </Box>
       )}
       {joiningCode ? (

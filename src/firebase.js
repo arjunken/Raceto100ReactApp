@@ -11,6 +11,7 @@ import {
   getDocs,
   deleteDoc,
   arrayRemove,
+  addDoc,
 } from "firebase/firestore";
 import {
   createUserWithEmailAndPassword,
@@ -45,6 +46,7 @@ const auth = getAuth();
 const db = getFirestore();
 const colRefP = collection(db, "players");
 const colRefPn = collection(db, "playernames");
+const ColRefInv = collection(db, "invites");
 const storage = getStorage();
 const storageRef = ref(storage);
 const uploadsRef = ref(storage, "uploads");
@@ -288,4 +290,4 @@ export const deleteUsersData = async (name) => {
   }
 };
 
-export { auth, db, colRefP, colRefPn, reAuthenticateUser };
+export { auth, db, colRefP, colRefPn, ColRefInv, reAuthenticateUser };

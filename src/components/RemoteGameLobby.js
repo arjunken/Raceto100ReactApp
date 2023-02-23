@@ -10,9 +10,12 @@ import PlayersContext from "../store/players-context";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import _ from "lodash";
-import SocketContext from "../store/socket-context";
+// import SocketContext from "../store/socket-context";
 import PageLoading from "../layouts/PageLoading";
 import { inviteMaxJoins, nanoid } from "../globalVariables";
+import { Invite } from "../classes/Invite";
+import { auth, colRefP } from "../firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 const RemoteGameLobby = () => {
   // const navigate = useNavigate();
@@ -24,66 +27,77 @@ const RemoteGameLobby = () => {
   const [playInProgress, setPlayInProgress] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
   const swalert = withReactContent(Swal);
-  const socketCtx = useContext(SocketContext);
-  const socket = socketCtx.socket;
+  // const socketCtx = useContext(SocketContext);
+  // const socket = socketCtx.socket;
   const [openSBAlert, setOpenSBAlert] = useState({
     myInviteExpiry: false,
     newJoin: false,
     inviteCancelled: false,
   });
 
-  useEffect(() => {
-    if (socket) {
-      socket.on("newPrivateInvites", (invite) => {
-        invite.socketId !== socket.id && setPrivateInvites((existingInvites) => [...existingInvites, invite]);
-      });
-
-      socket.on("invite_cancelled_update_invites", (socketId) => {
-        setPrivateInvites(
-          privateInvites.filter((invite) => {
-            return invite.socketId !== socketId;
-          })
-        );
-      });
-
-      socket.on("activeInvites", (invites) => {
-        setPrivateInvites((preInvites) => [...preInvites, ...invites]);
-      });
-
-      socket.on("player_exited", (socketId) => {
-        setPrivateInvites(
-          privateInvites.filter((invite) => {
-            invite.curRoomSize--;
-            return invite.socketId !== socketId;
-          })
-        );
-      });
-
-      socket.on("totalJoins", (totalJoins) => {
-        if (totalJoins > 0) {
-          setOpenSBAlert({ ...openSBAlert, newJoin: true });
-        }
-      });
-
-      socket.on("invite_cancelled_show_alerts", () => {
-        setOpenSBAlert({ ...openSBAlert, inviteCancelled: true });
-      });
-
-      socket.on("connect_error", (err) => {
-        if (err.code === 0) {
-          console.error("Error: Can't establish connection with the server. Check your network connection");
-        }
-      });
-      return () => {
-        socket.off("newPrivateInvites");
-        socket.off("activeInvites");
-        socket.off("player_exited");
-        socket.off("invite_cancelled_update_invites");
-        socket.off("invite_cancelled_show_alerts");
-        socket.off("connect_error");
-      };
+  const hasInvite = async () => {
+    const docSnap = await getDoc(doc(colRefP, auth.currentUser.uid));
+    if (docSnap.exists()) {
+      setPlayInProgress(docSnap.data().hasInvite);
     }
-  }, [socket, privateInvites, openSBAlert]);
+  };
+
+  useEffect(() => {
+    hasInvite();
+  }, []);
+
+  // useEffect(() => {
+  //   if (socket) {
+  //     socket.on("newPrivateInvites", (invite) => {
+  //       invite.socketId !== socket.id && setPrivateInvites((existingInvites) => [...existingInvites, invite]);
+  //     });
+
+  //     socket.on("invite_cancelled_update_invites", (socketId) => {
+  //       setPrivateInvites(
+  //         privateInvites.filter((invite) => {
+  //           return invite.socketId !== socketId;
+  //         })
+  //       );
+  //     });
+
+  //     socket.on("activeInvites", (invites) => {
+  //       setPrivateInvites((preInvites) => [...preInvites, ...invites]);
+  //     });
+
+  //     socket.on("player_exited", (socketId) => {
+  //       setPrivateInvites(
+  //         privateInvites.filter((invite) => {
+  //           invite.curRoomSize--;
+  //           return invite.socketId !== socketId;
+  //         })
+  //       );
+  //     });
+
+  //     socket.on("totalJoins", (totalJoins) => {
+  //       if (totalJoins > 0) {
+  //         setOpenSBAlert({ ...openSBAlert, newJoin: true });
+  //       }
+  //     });
+
+  //     socket.on("invite_cancelled_show_alerts", () => {
+  //       setOpenSBAlert({ ...openSBAlert, inviteCancelled: true });
+  //     });
+
+  //     socket.on("connect_error", (err) => {
+  //       if (err.code === 0) {
+  //         console.error("Error: Can't establish connection with the server. Check your network connection");
+  //       }
+  //     });
+  //     return () => {
+  //       socket.off("newPrivateInvites");
+  //       socket.off("activeInvites");
+  //       socket.off("player_exited");
+  //       socket.off("invite_cancelled_update_invites");
+  //       socket.off("invite_cancelled_show_alerts");
+  //       socket.off("connect_error");
+  //     };
+  //   }
+  // }, [socket, privateInvites, openSBAlert]);
 
   //Handler for creating new invites
   const createMyGameInviteHandler = () => {
@@ -102,14 +116,21 @@ const RemoteGameLobby = () => {
       })
       .then((result) => {
         if (result.isConfirmed) {
-          player.gameId = nanoid(5);
-          player.socketId = socket.id;
-          player.curRoomSize = 1;
-          player.maxJoins = inviteMaxJoins;
-          player.inviteCreatedAt = Date.now();
+          const inviteId = nanoid(6);
+          // player.socketId = socket.id;
           setMyGameInvite(player);
-          socket.emit("newInvite", player);
+          // socket.emit("newInvite", player);
           setPlayInProgress(true);
+          const invite = new Invite(inviteId, player);
+
+          invite
+            .publish()
+            .then(() => {
+              console.log("Invite has been published!");
+            })
+            .catch((ex) => {
+              console.error("Error publishing the invite", ex.message);
+            });
         }
       });
   };
@@ -129,13 +150,13 @@ const RemoteGameLobby = () => {
       .then(async (result) => {
         if (result.isConfirmed) {
           setMyGameInvite(null);
-          socket.emit("cancel_invite", (res) => {
-            if (res) {
-              console.log("Your invitation successfully cancelled!");
-            } else {
-              console.error("Error in cancelling your invite");
-            }
-          });
+          // socket.emit("cancel_invite", (res) => {
+          //   if (res) {
+          //     console.log("Your invitation successfully cancelled!");
+          //   } else {
+          //     console.error("Error in cancelling your invite");
+          //   }
+          // });
           setPlayInProgress(false);
         } else {
           console.log("you're good");
@@ -149,7 +170,7 @@ const RemoteGameLobby = () => {
   //Handlers for invites expiry
   const myGameInviteExpiryHandler = (socketId) => {
     setMyGameInvite(null);
-    socket.emit("removeActiveInvite", socketId);
+    // socket.emit("removeActiveInvite", socketId);
     setPlayInProgress(false);
     setOpenSBAlert({ ...openSBAlert, myInviteExpiry: true });
   };
@@ -160,7 +181,7 @@ const RemoteGameLobby = () => {
         return invite.socketId !== socketId;
       });
     });
-    socket.emit("removeActiveInvite", socketId);
+    // socket.emit("removeActiveInvite", socketId);
   };
 
   //Handle invitation joining
@@ -194,30 +215,30 @@ const RemoteGameLobby = () => {
     // }
     console.log("Requesting server to join invitation...");
     setShowLoading(true);
-    socket.emit("joinInvite", invite.socketId, invite.gameId, invite.maxJoins, (res) => {
-      if (res) {
-        setPrivateInvites(
-          privateInvites.map((item) => {
-            if (item.socketId === invite.socketId) {
-              return { ...item, curRoomSize: invite.curRoomSize + 1 };
-            } else {
-              return item;
-            }
-          })
-        );
-        setPlayerCurrentRoom(res);
-      }
-    });
+    // socket.emit("joinInvite", invite.socketId, invite.gameId, invite.maxJoins, (res) => {
+    //   if (res) {
+    //     setPrivateInvites(
+    //       privateInvites.map((item) => {
+    //         if (item.socketId === invite.socketId) {
+    //           return { ...item, curRoomSize: invite.curRoomSize + 1 };
+    //         } else {
+    //           return item;
+    //         }
+    //       })
+    //     );
+    //     setPlayerCurrentRoom(res);
+    //   }
+    // });
   };
 
   //Handler for the button on pageloading - waiting for game to start
   const quitJoinWaitHandler = () => {
-    socket.emit("quit_join_wait", playerCurrentRoom, (res) => {
-      if (res) {
-        setShowLoading(false);
-        setPlayerCurrentRoom(null);
-      }
-    });
+    // socket.emit("quit_join_wait", playerCurrentRoom, (res) => {
+    //   if (res) {
+    //     setShowLoading(false);
+    //     setPlayerCurrentRoom(null);
+    //   }
+    // });
   };
 
   return (

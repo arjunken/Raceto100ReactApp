@@ -1,4 +1,3 @@
-import { serverTimestamp } from "firebase/firestore";
 export class Player {
   constructor(name) {
     this.data = {
@@ -6,12 +5,12 @@ export class Player {
       email: "",
       avatarUrl: "/avatars/avatar0.jpg",
       isRegistered: false,
+      hasInvite: false,
       gold: 0,
       diamond: 0,
       totalScore: 0,
       gamesPlayed: 0,
       gamesWon: 0,
-      createdAt: serverTimestamp(),
     };
     this.robodata = {
       gold: 0,
