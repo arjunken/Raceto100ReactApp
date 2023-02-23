@@ -5,7 +5,6 @@ let socket;
 export const initiateSocketConnection = () => {
   console.log("Connecting socket...");
   socket = io(process.env.REACT_APP_SERVER_URL);
-  console.log("Socket connected!");
   return socket;
 };
 

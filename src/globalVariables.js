@@ -29,3 +29,5 @@ export const invitationExpiry = 600000;
 export const inviteMaxJoins = 2;
 //Joining Code format
 export const nanoid = customAlphabet("1234567890abcdef", 6);
+export const default_nonRegistered_gameMode = "1";
+export const default_registered_gameMode = "2";

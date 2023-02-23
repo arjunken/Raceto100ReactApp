@@ -9,13 +9,13 @@ import PlayersContext from "../store/players-context";
 import GameSubtitle from "../components/GameSubtitle";
 import AppContainer from "../layouts/AppContainer";
 import { Player } from "../classes/Player";
-import { globalVariables } from "../globalVariables";
+import { default_nonRegistered_gameMode, globalVariables } from "../globalVariables";
 import { testUsername } from "../utils";
 import Navigation from "../components/Navigation";
 import PlayOptions from "../components/PlayOptions";
 
 const Home = () => {
-  const [mode, setMode] = useState("2");
+  const [mode, setMode] = useState(default_nonRegistered_gameMode);
   const navigate = useNavigate();
   const playerCtx = useContext(PlayersContext);
   const [player1Name, setPlayer1Name] = useState("name");
@@ -75,15 +75,11 @@ const Home = () => {
       navigate("/gamerobo");
     } else {
       // console.log("Remote playing is coming soon!");
-      // swalert.fire("Coming up..", "Remote Player option is currently not supported. Check this option in the future.", "info");
-      const player = new Player(player1Name);
-      player.data.avatarUrl = `/avatars/avatar${avatarSelected}.jpg`;
-      //Flushout previously stored sessions in the context store
-      playerCtx.resetPlayers();
-      //add player into the context store
-      playerCtx.addPlayer(player);
-      //Send the player1 game server
-      navigate("/remotegame");
+      swalert.fire(
+        "Registration Required",
+        "This option is available only for registered users. Go to Register tab and create an account or login to an existing account",
+        "info"
+      );
     }
   };
 

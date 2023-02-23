@@ -9,7 +9,7 @@ import { auth, getCurrentUserData } from "../firebase";
 import AppContainer from "../layouts/AppContainer";
 import PlayersContext from "../store/players-context";
 import { useNavigate } from "react-router-dom";
-import { globalVariables } from "../globalVariables";
+import { default_registered_gameMode, globalVariables } from "../globalVariables";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import EditProfile from "../components/EditProfile";
@@ -18,7 +18,7 @@ import PlayerStats from "../components/PlayerStats";
 const Profile = () => {
   const [currentUserData, setCurrentUserData] = useState(null);
   const [playOptionsToggle, setplayOptionsToggle] = useState(true);
-  const [mode, setMode] = useState("1");
+  const [mode, setMode] = useState(default_registered_gameMode);
   const playerCtx = useContext(PlayersContext);
   const navigate = useNavigate();
   const userId = localStorage.getItem("raceto100Auth");
@@ -74,7 +74,15 @@ const Profile = () => {
       playerCtx.addPlayer(player2);
       navigate("/gamerobo");
     } else {
-      swalert.fire("Coming up..", "Remote Player option is currently not supported. Check this option in the future.", "info");
+      // swalert.fire("Coming up..", "Remote Player option is currently not supported. Check this option in the future.", "info");
+      const player = new Player(currentUserData.name);
+      player.data.avatarUrl = currentUserData.avatarUrl;
+      //Flushout previously stored sessions in the context store
+      playerCtx.resetPlayers();
+      //add player into the context store
+      playerCtx.addPlayer(player);
+      //Send the player1 game server
+      navigate("/remotegame");
     }
   };
 

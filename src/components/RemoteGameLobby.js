@@ -19,9 +19,10 @@ const RemoteGameLobby = () => {
   const playerCtx = useContext(PlayersContext);
   const player = _.pick(playerCtx.players[0], ["data", "gameSessionData"]);
   const [myGameInvite, setMyGameInvite] = useState(null);
+  const [playerCurrentRoom, setPlayerCurrentRoom] = useState(null);
   const [privateInvites, setPrivateInvites] = useState([]);
   const [playInProgress, setPlayInProgress] = useState(false);
-  const [showLoading, setShowLoading] = useState([false, ""]);
+  const [showLoading, setShowLoading] = useState(false);
   const swalert = withReactContent(Swal);
   const socketCtx = useContext(SocketContext);
   const socket = socketCtx.socket;
@@ -68,12 +69,18 @@ const RemoteGameLobby = () => {
         setOpenSBAlert({ ...openSBAlert, inviteCancelled: true });
       });
 
+      socket.on("connect_error", (err) => {
+        if (err.code === 0) {
+          console.error("Error: Can't establish connection with the server. Check your network connection");
+        }
+      });
       return () => {
         socket.off("newPrivateInvites");
         socket.off("activeInvites");
         socket.off("player_exited");
         socket.off("invite_cancelled_update_invites");
         socket.off("invite_cancelled_show_alerts");
+        socket.off("connect_error");
       };
     }
   }, [socket, privateInvites, openSBAlert]);
@@ -186,7 +193,7 @@ const RemoteGameLobby = () => {
     //   }, 5000);
     // }
     console.log("Requesting server to join invitation...");
-
+    setShowLoading(true);
     socket.emit("joinInvite", invite.socketId, invite.gameId, invite.maxJoins, (res) => {
       if (res) {
         setPrivateInvites(
@@ -198,6 +205,17 @@ const RemoteGameLobby = () => {
             }
           })
         );
+        setPlayerCurrentRoom(res);
+      }
+    });
+  };
+
+  //Handler for the button on pageloading - waiting for game to start
+  const quitJoinWaitHandler = () => {
+    socket.emit("quit_join_wait", playerCurrentRoom, (res) => {
+      if (res) {
+        setShowLoading(false);
+        setPlayerCurrentRoom(null);
       }
     });
   };
@@ -274,7 +292,13 @@ const RemoteGameLobby = () => {
         </Button> */}
       </Paper>
       {/* Render alerts and page loading */}
-      {showLoading && <PageLoading showLoading={showLoading[0]} msg={showLoading[1]} />}
+      {showLoading && (
+        <PageLoading
+          showLoading={showLoading}
+          msg="Please wait while the remote player the start the game session..."
+          actionBtn={quitJoinWaitHandler}
+        />
+      )}
       {/* Snackbar Alerts */}
       <Snackbar open={openSBAlert.myGameInvite} autoHideDuration={6000} onClose={() => setOpenSBAlert({ ...openSBAlert, myInviteExpiry: true })}>
         <Alert onClose={() => setOpenSBAlert({ ...openSBAlert, myInviteExpiry: true })} severity="info" sx={{ width: "100%" }}>
