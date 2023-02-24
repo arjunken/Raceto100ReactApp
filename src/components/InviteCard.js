@@ -18,30 +18,26 @@ const InviteCard = ({ invite, joiningCode, expiryHandlerSelf, expiryHandlerOther
         backgroundColor: lightColors[Math.floor(Math.random() * 8 + 1)],
       }}
     >
-      {/* <Avatar alt="avatar" src={invite.data.avatarUrl} sx={{ width: 56, height: 56, borderRadius: "50px" }} variant="square" />
-      <Typography> {invite.data.name}</Typography> */}
+      <Avatar alt="avatar" src={invite.player.data.avatarUrl} sx={{ width: 56, height: 56, borderRadius: "50px" }} variant="square" />
+      <Typography> {invite.player.data.name}</Typography>
       {joiningCode ? (
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mx: "auto" }}>
-          <Typography variant="caption">Joining Code: {invite.gameId}</Typography>
+          <Typography variant="caption">Joining Code: {invite.id}</Typography>
           <Typography variant="caption">
-            <TimeDisplayCreatedAt createdTime={invite.inviteCreatedAt} />
+            <TimeDisplayCreatedAt createdTime={invite.created_at} />
           </Typography>
           <Typography variant="caption">
-            <TimeDisplayExpiresIn expiresInTime={invitationExpiry} createdTime={invite.inviteCreatedAt} expiryHandlerSelf={expiryHandlerSelf} />
+            <TimeDisplayExpiresIn expiresInTime={invitationExpiry} createdTime={invite.created_at} expiryHandlerSelf={expiryHandlerSelf} />
           </Typography>
         </Box>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mx: "auto" }}>
-          {/* <Typography variant="caption">
-            <TimeDisplayCreatedAt createdTime={invite.inviteCreatedAt} />
+          <Typography variant="caption">
+            <TimeDisplayCreatedAt createdTime={invite.created_at} />
           </Typography>
           <Typography variant="caption">
-            <TimeDisplayExpiresIn
-              expiresInTime={invitationExpiry}
-              createdTime={invite.inviteCreatedAt}
-              expiryHandlerOthers={expiryHandlerOthers}
-            />
-          </Typography> */}
+            <TimeDisplayExpiresIn expiresInTime={invitationExpiry} createdTime={invite.created_at} expiryHandlerOthers={expiryHandlerOthers} />
+          </Typography>
         </Box>
       )}
       {joiningCode ? (

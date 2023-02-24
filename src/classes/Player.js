@@ -6,6 +6,7 @@ export class Player {
       avatarUrl: "/avatars/avatar0.jpg",
       isRegistered: false,
       hasInvite: false,
+      inviteId: null,
       gold: 0,
       diamond: 0,
       totalScore: 0,

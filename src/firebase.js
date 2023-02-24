@@ -290,4 +290,36 @@ export const deleteUsersData = async (name) => {
   }
 };
 
-export { auth, db, colRefP, colRefPn, ColRefInv, reAuthenticateUser };
+//Check if a user has an existing invite
+const checkHasInvite = async () => {
+  const docSnap = await getDoc(doc(colRefP, auth.currentUser.uid));
+  return docSnap;
+};
+
+//Delete the invite
+const deleteMyInvite = async (inviteId) => {
+  deleteDoc(doc(db, "invites", inviteId, "room", auth.currentUser.uid));
+  deleteDoc(doc(db, "invites", inviteId));
+  await updateDoc(doc(colRefP, auth.currentUser.uid), { hasInvite: false, inviteId: null });
+};
+
+//Get current user invites
+const getMyInvite = async () => {
+  const docRef = doc(colRefP, auth.currentUser.uid);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    if (docSnap.data().inviteId !== "" && docSnap.data().inviteId !== null) {
+      const inviteRef = doc(ColRefInv, docSnap.data().inviteId);
+      const inviteSnap = await getDoc(inviteRef);
+      if (inviteSnap.exists()) {
+        const roomRef = doc(ColRefInv, docSnap.data().inviteId, "room", auth.currentUser.uid);
+        const roomSnap = await getDoc(roomRef);
+        let data = inviteSnap.data();
+        data.player = roomSnap.data();
+        return data;
+      }
+    }
+  }
+};
+
+export { auth, db, colRefP, colRefPn, ColRefInv, getMyInvite, checkHasInvite, deleteMyInvite, reAuthenticateUser };

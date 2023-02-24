@@ -23,7 +23,7 @@ const Register = () => {
   const [emailErrorText, setEmailErrorText] = useState("");
   const [passwordErrorText, setPasswordErrorText] = useState("");
   const swalert = withReactContent(Swal);
-  const [showLoading, setShowLoading] = useState(false);
+  const [showLoading, setShowLoading] = useState([false]);
 
   const inputValidator = (e) => {
     switch (e.target.id) {
@@ -163,7 +163,7 @@ const Register = () => {
           Register
         </Button>
       </Paper>
-      {showLoading && <PageLoading showLoading={showLoading} msg="Please wait while we setup your account..." />}
+      {showLoading && <PageLoading showLoading={showLoading[0]} msg={showLoading[1]} />}
     </AppContainer>
   );
 };

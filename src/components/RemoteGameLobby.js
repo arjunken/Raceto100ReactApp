@@ -1,7 +1,6 @@
 import { Alert, Button, Divider, Paper, Snackbar, Typography } from "@mui/material";
 import { Box } from "@mui/system";
-import React, { useContext } from "react";
-import { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import { useState } from "react";
 // import { useNavigate } from "react-router-dom";
 import InviteCard from "./InviteCard";
@@ -14,90 +13,58 @@ import _ from "lodash";
 import PageLoading from "../layouts/PageLoading";
 import { inviteMaxJoins, nanoid } from "../globalVariables";
 import { Invite } from "../classes/Invite";
-import { auth, colRefP } from "../firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { checkHasInvite, ColRefInv, deleteMyInvite, getMyInvite } from "../firebase";
+import { onSnapshot } from "@firebase/firestore";
 
 const RemoteGameLobby = () => {
   // const navigate = useNavigate();
   const playerCtx = useContext(PlayersContext);
   const player = _.pick(playerCtx.players[0], ["data", "gameSessionData"]);
   const [myGameInvite, setMyGameInvite] = useState(null);
-  const [playerCurrentRoom, setPlayerCurrentRoom] = useState(null);
   const [privateInvites, setPrivateInvites] = useState([]);
   const [playInProgress, setPlayInProgress] = useState(false);
-  const [showLoading, setShowLoading] = useState(false);
+  const [showLoading, setShowLoading] = useState([false]);
   const swalert = withReactContent(Swal);
-  // const socketCtx = useContext(SocketContext);
-  // const socket = socketCtx.socket;
   const [openSBAlert, setOpenSBAlert] = useState({
     myInviteExpiry: false,
     newJoin: false,
     inviteCancelled: false,
   });
 
-  const hasInvite = async () => {
-    const docSnap = await getDoc(doc(colRefP, auth.currentUser.uid));
-    if (docSnap.exists()) {
-      setPlayInProgress(docSnap.data().hasInvite);
-    }
-  };
-
   useEffect(() => {
-    hasInvite();
+    setShowLoading([true, "Loading your current Invites..."]);
+    //Check if there are existing invites and display them
+    checkHasInvite().then((docSnap) => {
+      if (docSnap.exists()) {
+        setPlayInProgress(docSnap.data().hasInvite);
+        getMyInvite().then((data) => {
+          if (data) {
+            setMyGameInvite(data);
+          }
+          setShowLoading([false]);
+        });
+      }
+    });
   }, []);
 
-  // useEffect(() => {
-  //   if (socket) {
-  //     socket.on("newPrivateInvites", (invite) => {
-  //       invite.socketId !== socket.id && setPrivateInvites((existingInvites) => [...existingInvites, invite]);
-  //     });
-
-  //     socket.on("invite_cancelled_update_invites", (socketId) => {
-  //       setPrivateInvites(
-  //         privateInvites.filter((invite) => {
-  //           return invite.socketId !== socketId;
-  //         })
-  //       );
-  //     });
-
-  //     socket.on("activeInvites", (invites) => {
-  //       setPrivateInvites((preInvites) => [...preInvites, ...invites]);
-  //     });
-
-  //     socket.on("player_exited", (socketId) => {
-  //       setPrivateInvites(
-  //         privateInvites.filter((invite) => {
-  //           invite.curRoomSize--;
-  //           return invite.socketId !== socketId;
-  //         })
-  //       );
-  //     });
-
-  //     socket.on("totalJoins", (totalJoins) => {
-  //       if (totalJoins > 0) {
-  //         setOpenSBAlert({ ...openSBAlert, newJoin: true });
-  //       }
-  //     });
-
-  //     socket.on("invite_cancelled_show_alerts", () => {
-  //       setOpenSBAlert({ ...openSBAlert, inviteCancelled: true });
-  //     });
-
-  //     socket.on("connect_error", (err) => {
-  //       if (err.code === 0) {
-  //         console.error("Error: Can't establish connection with the server. Check your network connection");
-  //       }
-  //     });
-  //     return () => {
-  //       socket.off("newPrivateInvites");
-  //       socket.off("activeInvites");
-  //       socket.off("player_exited");
-  //       socket.off("invite_cancelled_update_invites");
-  //       socket.off("invite_cancelled_show_alerts");
-  //       socket.off("connect_error");
-  //     };
-  //   }
-  // }, [socket, privateInvites, openSBAlert]);
+  //Run UseEffect for listening to the new invites from Firebase invites collection
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      ColRefInv,
+      (snapshot) => {
+        const invites = [];
+        console.log(snapshot);
+        snapshot.forEach((doc) => {
+          invites.push(doc.data());
+        });
+        setPrivateInvites((prevInvites) => {});
+      },
+      (error) => {
+        console.error("There was an error in getting the current invites from other players:", error.message);
+      }
+    );
+    return () => unsubscribe();
+  }, []);
 
   //Handler for creating new invites
   const createMyGameInviteHandler = () => {
@@ -117,12 +84,9 @@ const RemoteGameLobby = () => {
       .then((result) => {
         if (result.isConfirmed) {
           const inviteId = nanoid(6);
-          // player.socketId = socket.id;
-          setMyGameInvite(player);
-          // socket.emit("newInvite", player);
           setPlayInProgress(true);
           const invite = new Invite(inviteId, player);
-
+          setMyGameInvite(invite);
           invite
             .publish()
             .then(() => {
@@ -149,14 +113,14 @@ const RemoteGameLobby = () => {
       })
       .then(async (result) => {
         if (result.isConfirmed) {
+          deleteMyInvite(myGameInvite.id)
+            .then(() => {
+              console.log("Your invite has been deleted!");
+            })
+            .catch((ex) => {
+              console.error("Error deleting your invite", ex.message);
+            });
           setMyGameInvite(null);
-          // socket.emit("cancel_invite", (res) => {
-          //   if (res) {
-          //     console.log("Your invitation successfully cancelled!");
-          //   } else {
-          //     console.error("Error in cancelling your invite");
-          //   }
-          // });
           setPlayInProgress(false);
         } else {
           console.log("you're good");
@@ -168,8 +132,8 @@ const RemoteGameLobby = () => {
   };
 
   //Handlers for invites expiry
-  const myGameInviteExpiryHandler = (socketId) => {
-    setMyGameInvite(null);
+  const myGameInviteExpiryHandler = (inviteId) => {
+    // setMyGameInvite(null);
     // socket.emit("removeActiveInvite", socketId);
     setPlayInProgress(false);
     setOpenSBAlert({ ...openSBAlert, myInviteExpiry: true });
@@ -208,27 +172,13 @@ const RemoteGameLobby = () => {
     // });
 
     // if (code) {
-    //   setShowLoading([true, "Please wait while the remote player the start the game session..."]);
+    //   setShowLoading([true, "Please wait while the remote player the start the game session...", quitJoinWaitHandler]);
     //   setTimeout(() => {
     //     setShowLoading([false, ""]);
     //   }, 5000);
     // }
     console.log("Requesting server to join invitation...");
-    setShowLoading(true);
-    // socket.emit("joinInvite", invite.socketId, invite.gameId, invite.maxJoins, (res) => {
-    //   if (res) {
-    //     setPrivateInvites(
-    //       privateInvites.map((item) => {
-    //         if (item.socketId === invite.socketId) {
-    //           return { ...item, curRoomSize: invite.curRoomSize + 1 };
-    //         } else {
-    //           return item;
-    //         }
-    //       })
-    //     );
-    //     setPlayerCurrentRoom(res);
-    //   }
-    // });
+    setShowLoading(true, "Please wait while the remote player the start the game session...", quitJoinWaitHandler);
   };
 
   //Handler for the button on pageloading - waiting for game to start
@@ -270,10 +220,10 @@ const RemoteGameLobby = () => {
         {myGameInvite ? (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
             <InviteCard
-              key={myGameInvite.socketId}
+              key={myGameInvite.id}
               invite={myGameInvite}
-              joiningCode={myGameInvite.gameId}
-              expiryHandlerSelf={() => myGameInviteExpiryHandler(myGameInvite.socketId)}
+              joiningCode={myGameInvite.id}
+              expiryHandlerSelf={() => myGameInviteExpiryHandler(myGameInvite.id)}
             />
           </Box>
         ) : (
@@ -313,13 +263,7 @@ const RemoteGameLobby = () => {
         </Button> */}
       </Paper>
       {/* Render alerts and page loading */}
-      {showLoading && (
-        <PageLoading
-          showLoading={showLoading}
-          msg="Please wait while the remote player the start the game session..."
-          actionBtn={quitJoinWaitHandler}
-        />
-      )}
+      {showLoading && <PageLoading showLoading={showLoading[0]} msg={showLoading[1]} actionBtn={showLoading[2]} />}
       {/* Snackbar Alerts */}
       <Snackbar open={openSBAlert.myGameInvite} autoHideDuration={6000} onClose={() => setOpenSBAlert({ ...openSBAlert, myInviteExpiry: true })}>
         <Alert onClose={() => setOpenSBAlert({ ...openSBAlert, myInviteExpiry: true })} severity="info" sx={{ width: "100%" }}>
