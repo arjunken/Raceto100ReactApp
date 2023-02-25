@@ -88,7 +88,7 @@ const Register = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setShowLoading(true);
+    setShowLoading([true, "Please wait while we setup your account...."]);
     //Create a player object and store
     const player = new Player(username);
     player.data.email = email;
@@ -104,7 +104,7 @@ const Register = () => {
       .catch((ex) => {
         console.error("There is an error registering user:", ex.message);
         swalert.fire("Error!", "There is an existing account", "error");
-        setShowLoading(false);
+        setShowLoading([false]);
       });
   };
 
@@ -163,7 +163,7 @@ const Register = () => {
           Register
         </Button>
       </Paper>
-      {showLoading && <PageLoading showLoading={showLoading[0]} msg={showLoading[1]} />}
+      {showLoading[0] && <PageLoading showLoading={showLoading[0]} msg={showLoading[1]} />}
     </AppContainer>
   );
 };

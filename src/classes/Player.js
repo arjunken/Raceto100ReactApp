@@ -5,7 +5,6 @@ export class Player {
       email: "",
       avatarUrl: "/avatars/avatar0.jpg",
       isRegistered: false,
-      hasInvite: false,
       inviteId: null,
       gold: 0,
       diamond: 0,

@@ -13,7 +13,7 @@ import _ from "lodash";
 import PageLoading from "../layouts/PageLoading";
 import { inviteMaxJoins, nanoid } from "../globalVariables";
 import { Invite } from "../classes/Invite";
-import { checkHasInvite, ColRefInv, deleteMyInvite, getMyInvite } from "../firebase";
+import { auth, ColRefInv, deleteMyInvite, getMyInvite } from "../firebase";
 import { onSnapshot } from "@firebase/firestore";
 
 const RemoteGameLobby = () => {
@@ -34,30 +34,49 @@ const RemoteGameLobby = () => {
   useEffect(() => {
     setShowLoading([true, "Loading your current Invites..."]);
     //Check if there are existing invites and display them
-    checkHasInvite().then((docSnap) => {
-      if (docSnap.exists()) {
-        setPlayInProgress(docSnap.data().hasInvite);
-        getMyInvite().then((data) => {
-          if (data) {
-            setMyGameInvite(data);
-          }
-          setShowLoading([false]);
-        });
+    getMyInvite().then((data) => {
+      if (data) {
+        setPlayInProgress(true);
+        setMyGameInvite(data);
       }
+      setShowLoading([false]);
     });
   }, []);
 
   //Run UseEffect for listening to the new invites from Firebase invites collection
   useEffect(() => {
+    // const unsubscribe = onSnapshot(
+    //   ColRefInv,
+    //   (snapshot) => {
+    //     const invites = [];
+    //     snapshot.docChanges().forEach((change) => {
+    //       if (change.type === "added") {
+    //         invites.push(change.doc.data());
+    //       }
+    //     });
+    //     setPrivateInvites(_.drop(invites));
+    //   },
+    //   (error) => {
+    //     console.error("There was an error in getting the current invites from other players:", error.message);
+    //   }
+    // );
     const unsubscribe = onSnapshot(
       ColRefInv,
       (snapshot) => {
-        const invites = [];
-        console.log(snapshot);
-        snapshot.forEach((doc) => {
-          invites.push(doc.data());
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added" || change.type === "modified") {
+            setPrivateInvites((preInvites) => [...preInvites, change.doc.data()]);
+          }
+          if (change.type === "removed") {
+            setPrivateInvites(
+              privateInvites.filter((item) => {
+                return change.doc.data().id != item.id;
+              })
+            );
+          }
         });
-        setPrivateInvites((prevInvites) => {});
+        console.log(privateInvites);
+        // setPrivateInvites(_.drop(invites));
       },
       (error) => {
         console.error("There was an error in getting the current invites from other players:", error.message);
@@ -245,12 +264,12 @@ const RemoteGameLobby = () => {
             {privateInvites.map((invite) => {
               return (
                 <InviteCard
-                  key={invite.socketId}
+                  key={invite.id}
                   invite={invite}
-                  roomSize={invite.curRoomSize}
+                  roomSize={1}
                   maxJoins={invite.maxJoins}
                   myGameInvite={myGameInvite}
-                  expiryHandlerOthers={() => privateInvitesExpiryHandler(invite.socketId)}
+                  expiryHandlerOthers={() => privateInvitesExpiryHandler(invite.id)}
                   joinInviteHandler={() => joinInviteHandler(invite)}
                 />
               );

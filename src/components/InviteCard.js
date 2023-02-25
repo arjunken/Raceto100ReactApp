@@ -18,8 +18,8 @@ const InviteCard = ({ invite, joiningCode, expiryHandlerSelf, expiryHandlerOther
         backgroundColor: lightColors[Math.floor(Math.random() * 8 + 1)],
       }}
     >
-      <Avatar alt="avatar" src={invite.player.data.avatarUrl} sx={{ width: 56, height: 56, borderRadius: "50px" }} variant="square" />
-      <Typography> {invite.player.data.name}</Typography>
+      <Avatar alt="avatar" src={invite.room[0].data.avatarUrl} sx={{ width: 56, height: 56, borderRadius: "50px" }} variant="square" />
+      <Typography> {invite.room[0].data.name}</Typography>
       {joiningCode ? (
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mx: "auto" }}>
           <Typography variant="caption">Joining Code: {invite.id}</Typography>

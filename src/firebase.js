@@ -105,14 +105,14 @@ export const signInUser = async (email, password) => {
 export const saveData = async (uid, playersData, winner) => {
   await updateDoc(doc(colRefP, uid), {
     gamesPlayed: increment(1),
-    gamesWon: winner.index == "0" ? increment(1) : increment(0),
+    gamesWon: winner.index === "0" ? increment(1) : increment(0),
     gold: increment(playersData[0].gameSessionData.goldEarned),
     diamond: increment(playersData[0].gameSessionData.diamondEarned),
     totalScore: increment(playersData[0].gameSessionData.runningScore),
   });
   await updateDoc(doc(colRefP, uid, "collections", "robodata"), {
     gamesPlayed: increment(1),
-    gamesWon: winner.index == "1" ? increment(1) : increment(0),
+    gamesWon: winner.index === "1" ? increment(1) : increment(0),
     gold: increment(playersData[1].gameSessionData.goldEarned),
     diamond: increment(playersData[1].gameSessionData.diamondEarned),
     totalScore: increment(playersData[1].gameSessionData.runningScore),
@@ -290,16 +290,10 @@ export const deleteUsersData = async (name) => {
   }
 };
 
-//Check if a user has an existing invite
-const checkHasInvite = async () => {
-  const docSnap = await getDoc(doc(colRefP, auth.currentUser.uid));
-  return docSnap;
-};
-
 //Delete the invite
 const deleteMyInvite = async (inviteId) => {
-  deleteDoc(doc(db, "invites", inviteId, "room", auth.currentUser.uid));
   deleteDoc(doc(db, "invites", inviteId));
+  console.log(auth.currentUser.uid);
   await updateDoc(doc(colRefP, auth.currentUser.uid), { hasInvite: false, inviteId: null });
 };
 
@@ -312,14 +306,10 @@ const getMyInvite = async () => {
       const inviteRef = doc(ColRefInv, docSnap.data().inviteId);
       const inviteSnap = await getDoc(inviteRef);
       if (inviteSnap.exists()) {
-        const roomRef = doc(ColRefInv, docSnap.data().inviteId, "room", auth.currentUser.uid);
-        const roomSnap = await getDoc(roomRef);
-        let data = inviteSnap.data();
-        data.player = roomSnap.data();
-        return data;
+        return inviteSnap.data();
       }
     }
   }
 };
 
-export { auth, db, colRefP, colRefPn, ColRefInv, getMyInvite, checkHasInvite, deleteMyInvite, reAuthenticateUser };
+export { auth, db, colRefP, colRefPn, ColRefInv, getMyInvite, deleteMyInvite, reAuthenticateUser };
