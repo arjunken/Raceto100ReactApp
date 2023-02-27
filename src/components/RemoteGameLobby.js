@@ -9,21 +9,23 @@ import PlayersContext from "../store/players-context";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import _ from "lodash";
-// import SocketContext from "../store/socket-context";
 import PageLoading from "../layouts/PageLoading";
 import { inviteMaxJoins, nanoid } from "../globalVariables";
 import { Invite } from "../classes/Invite";
-import { auth, ColRefInv, deleteMyInvite, getMyInvite } from "../firebase";
-import { onSnapshot } from "@firebase/firestore";
+import { auth, ColRefInv, colRefP, deleteMyInvite, getMyInvite } from "../firebase";
+import { doc, onSnapshot } from "@firebase/firestore";
 
 const RemoteGameLobby = () => {
   // const navigate = useNavigate();
   const playerCtx = useContext(PlayersContext);
+  const [currentUserData, setCurrentUserData] = useState(null);
   const player = _.pick(playerCtx.players[0], ["data", "gameSessionData"]);
   const [myGameInvite, setMyGameInvite] = useState(null);
+  const userId = localStorage.getItem("raceto100Auth");
   const [privateInvites, setPrivateInvites] = useState([]);
   const [playInProgress, setPlayInProgress] = useState(false);
   const [showLoading, setShowLoading] = useState([false]);
+  const [inviteDocId, setInviteDocId] = useState(null);
   const swalert = withReactContent(Swal);
   const [openSBAlert, setOpenSBAlert] = useState({
     myInviteExpiry: false,
@@ -32,58 +34,74 @@ const RemoteGameLobby = () => {
   });
 
   useEffect(() => {
-    setShowLoading([true, "Loading your current Invites..."]);
-    //Check if there are existing invites and display them
-    getMyInvite().then((data) => {
-      if (data) {
-        setPlayInProgress(true);
-        setMyGameInvite(data);
-      }
-      setShowLoading([false]);
-    });
+    if (userId) {
+      setShowLoading([true, "Loading your current Invites..."]);
+      //Check if there are existing invites and display them
+      getMyInvite(userId).then((data) => {
+        if (data) {
+          setPlayInProgress(true);
+          setMyGameInvite(data);
+        }
+        setShowLoading([false]);
+      });
+    }
   }, []);
 
   //Run UseEffect for listening to the new invites from Firebase invites collection
   useEffect(() => {
-    // const unsubscribe = onSnapshot(
-    //   ColRefInv,
-    //   (snapshot) => {
-    //     const invites = [];
-    //     snapshot.docChanges().forEach((change) => {
-    //       if (change.type === "added") {
-    //         invites.push(change.doc.data());
-    //       }
-    //     });
-    //     setPrivateInvites(_.drop(invites));
-    //   },
-    //   (error) => {
-    //     console.error("There was an error in getting the current invites from other players:", error.message);
-    //   }
-    // );
-    const unsubscribe = onSnapshot(
+    const unsub_listner1 = onSnapshot(
+      doc(colRefP, userId),
+      (doc) => {
+        setCurrentUserData(doc.data());
+        setInviteDocId(doc.data().privateData.inviteId[0]);
+      },
+      (error) => {
+        console.error("There was an error in getting the current user data:", error.message);
+        setCurrentUserData(null);
+      }
+    );
+
+    const unsub_listner2 = onSnapshot(
       ColRefInv,
       (snapshot) => {
+        let invites = [];
+        // snapshot.forEach((doc) => {
+        //   invites.push(doc.data());
+        // });
+        // setPrivateInvites(invites);
         snapshot.docChanges().forEach((change) => {
-          if (change.type === "added" || change.type === "modified") {
+          if (change.type === "added") {
             setPrivateInvites((preInvites) => [...preInvites, change.doc.data()]);
           }
           if (change.type === "removed") {
-            setPrivateInvites(
-              privateInvites.filter((item) => {
-                return change.doc.data().id != item.id;
-              })
-            );
+            setPrivateInvites((preInvites) => {
+              return preInvites.filter((item) => {
+                return change.doc.data().id !== item.id;
+              });
+            });
+          }
+          if (change.type === "modified") {
+            setPrivateInvites((preInvites) => {
+              return preInvites.map((item) => {
+                return item.id === change.doc.data().id;
+              });
+            });
           }
         });
-        console.log(privateInvites);
-        // setPrivateInvites(_.drop(invites));
       },
       (error) => {
         console.error("There was an error in getting the current invites from other players:", error.message);
       }
     );
-    return () => unsubscribe();
+
+    return () => {
+      unsub_listner1();
+      unsub_listner2();
+    };
   }, []);
+
+  // const exInviteId = currentUserDataCtx.currentUserData.privateData.inviteId[1];
+  // const exJoiningCode = currentUserDataCtx.currentUserData.privateData.joiningCode;
 
   //Handler for creating new invites
   const createMyGameInviteHandler = () => {
@@ -102,12 +120,13 @@ const RemoteGameLobby = () => {
       })
       .then((result) => {
         if (result.isConfirmed) {
-          const inviteId = nanoid(6);
+          const inviteId = nanoid(10);
+          const joiningCode = nanoid(6);
           setPlayInProgress(true);
           const invite = new Invite(inviteId, player);
           setMyGameInvite(invite);
           invite
-            .publish()
+            .publish(joiningCode)
             .then(() => {
               console.log("Invite has been published!");
             })
@@ -132,7 +151,7 @@ const RemoteGameLobby = () => {
       })
       .then(async (result) => {
         if (result.isConfirmed) {
-          deleteMyInvite(myGameInvite.id)
+          deleteMyInvite(inviteDocId)
             .then(() => {
               console.log("Your invite has been deleted!");
             })
@@ -151,17 +170,23 @@ const RemoteGameLobby = () => {
   };
 
   //Handlers for invites expiry
-  const myGameInviteExpiryHandler = (inviteId) => {
-    // setMyGameInvite(null);
-    // socket.emit("removeActiveInvite", socketId);
+  const myGameInviteExpiryHandler = (inviteDocId) => {
+    setMyGameInvite(null);
     setPlayInProgress(false);
+    deleteMyInvite(inviteDocId)
+      .then(() => {
+        console.log("Your invite has been deleted!");
+      })
+      .catch((ex) => {
+        console.error("Error deleting your invite", ex.message);
+      });
     setOpenSBAlert({ ...openSBAlert, myInviteExpiry: true });
   };
 
-  const privateInvitesExpiryHandler = (socketId) => {
+  const privateInvitesExpiryHandler = (inviteId) => {
     setPrivateInvites((preInvites) => {
       return preInvites.filter((invite) => {
-        return invite.socketId !== socketId;
+        return invite.id !== inviteId;
       });
     });
     // socket.emit("removeActiveInvite", socketId);
@@ -241,8 +266,8 @@ const RemoteGameLobby = () => {
             <InviteCard
               key={myGameInvite.id}
               invite={myGameInvite}
-              joiningCode={myGameInvite.id}
-              expiryHandlerSelf={() => myGameInviteExpiryHandler(myGameInvite.id)}
+              joiningCode={"fds4342"}
+              expiryHandlerSelf={() => myGameInviteExpiryHandler(inviteDocId)}
             />
           </Box>
         ) : (
@@ -262,17 +287,19 @@ const RemoteGameLobby = () => {
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
             {privateInvites.map((invite) => {
-              return (
-                <InviteCard
-                  key={invite.id}
-                  invite={invite}
-                  roomSize={1}
-                  maxJoins={invite.maxJoins}
-                  myGameInvite={myGameInvite}
-                  expiryHandlerOthers={() => privateInvitesExpiryHandler(invite.id)}
-                  joinInviteHandler={() => joinInviteHandler(invite)}
-                />
-              );
+              if (invite.invitedBy !== currentUserData.playerData.name) {
+                return (
+                  <InviteCard
+                    key={invite.id}
+                    invite={invite}
+                    roomSize={1}
+                    maxJoins={invite.maxJoins}
+                    myGameInvite={myGameInvite}
+                    expiryHandlerOthers={() => privateInvitesExpiryHandler(invite.id)}
+                    joinInviteHandler={() => joinInviteHandler(invite)}
+                  />
+                );
+              }
             })}
           </Box>
         )}

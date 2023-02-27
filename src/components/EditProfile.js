@@ -23,8 +23,9 @@ import GppMaybeIcon from "@mui/icons-material/GppMaybe";
 import AvatarListItem from "./AvatarListItem";
 import avatarList from "../store/avatar-list";
 import { useEffect } from "react";
+import PageLoading from "../layouts/PageLoading";
 
-const EditProfile = ({ currentUserData, dataUpdateCounter, count }) => {
+const EditProfile = ({ currentUserData }) => {
   const [username, setUsername] = useState(null);
   const [email, setEmail] = useState(null);
   const [pwd, setPwd] = useState(null);
@@ -35,6 +36,7 @@ const EditProfile = ({ currentUserData, dataUpdateCounter, count }) => {
   const navigate = useNavigate();
   const swalert = withReactContent(Swal);
   const [avatarContainer, setAvatarContainer] = useState({ index: 9999, path: currentUserData.avatarUrl, showAvatarList: false });
+  const [showLoading, setShowLoading] = useState([false]);
 
   useEffect(() => {
     if (auth.currentUser.photoURL) {
@@ -82,7 +84,6 @@ const EditProfile = ({ currentUserData, dataUpdateCounter, count }) => {
         updateUsername(currentUserData.name, result)
           .then(() => {
             console.log("Username updated!");
-            dataUpdateCounter(count + 1);
             swalert.fire({
               position: "center",
               icon: "success",
@@ -164,11 +165,12 @@ const EditProfile = ({ currentUserData, dataUpdateCounter, count }) => {
       title: "Oops...",
       text: "Failed to change the password! Try again.",
     };
-
+    setShowLoading([true, "We are updating the password...."]);
     updateUserPassword(pwd)
       .then(() => {
         console.log("Password updated successfully!");
         swalert.fire(swalertOptionsSuccess);
+        setShowLoading([false]);
       })
       .catch((ex) => {
         console.error("Error updating the password: ", ex.message);
@@ -231,7 +233,6 @@ const EditProfile = ({ currentUserData, dataUpdateCounter, count }) => {
     updateAvatar(avatarContainer.path)
       .then(() => {
         setAvatarContainer((data) => ({ ...data, showAvatarList: false }));
-        dataUpdateCounter(count + 1);
       })
       .catch((ex) => {
         console.error("Error in updating the avatar:", ex.message);
@@ -257,7 +258,6 @@ const EditProfile = ({ currentUserData, dataUpdateCounter, count }) => {
         uploadAvatarToFb(file, filename)
           .then(() => {
             console.log("Avatar was updated successfully!");
-            dataUpdateCounter(count + 1);
             setAvatarContainer((data) => ({ ...data, path: auth.currentUser.photoURL }));
           })
           .catch((ex) => {
@@ -412,6 +412,7 @@ const EditProfile = ({ currentUserData, dataUpdateCounter, count }) => {
           Delete My Account
         </Button>
       </Paper>
+      {showLoading[0] && <PageLoading showLoading={showLoading[0]} msg={showLoading[1]} />}
     </Box>
   );
 };

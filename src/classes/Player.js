@@ -5,7 +5,6 @@ export class Player {
       email: "",
       avatarUrl: "/avatars/avatar0.jpg",
       isRegistered: false,
-      inviteId: null,
       gold: 0,
       diamond: 0,
       totalScore: 0,
@@ -18,6 +17,10 @@ export class Player {
       totalScore: 0,
       gamesPlayed: 0,
       gamesWon: 0,
+    };
+    this.privateData = {
+      inviteId: [null, null],
+      joiningCode: null,
     };
     this.gameSessionData = {
       runningScore: 0,

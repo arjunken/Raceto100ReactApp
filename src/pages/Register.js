@@ -95,7 +95,7 @@ const Register = () => {
     player.data.isRegistered = true;
 
     //Create the player account and data template
-    handleUserCreation(email, password, username, player.data, player.robodata)
+    handleUserCreation(email, password, username, player.data, player.robodata, player.privateData)
       .then((uid) => {
         localStorage.setItem("raceto100Auth", uid);
         console.log("User has been created successfully with UID: ", uid);

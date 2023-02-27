@@ -5,7 +5,7 @@ import { useContext, useEffect, useState } from "react";
 import { Player } from "../classes/Player";
 import Navigation from "../components/Navigation";
 import PlayOptions from "../components/PlayOptions";
-import { auth, getCurrentUserData } from "../firebase";
+import { auth, colRefP, getCurrentUserData } from "../firebase";
 import AppContainer from "../layouts/AppContainer";
 import PlayersContext from "../store/players-context";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +14,7 @@ import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import EditProfile from "../components/EditProfile";
 import PlayerStats from "../components/PlayerStats";
+import { doc, onSnapshot } from "@firebase/firestore";
 
 const Profile = () => {
   const [currentUserData, setCurrentUserData] = useState(null);
@@ -24,19 +25,22 @@ const Profile = () => {
   const userId = localStorage.getItem("raceto100Auth");
   const [showEditProfile, setShowEditProfile] = useState(false);
   const swalert = withReactContent(Swal);
-  const [curUserDataUpdateCounter, setCurUserDataUpdateCounter] = useState(0);
   useEffect(() => {
     if (userId) {
-      getCurrentUserData(userId)
-        .then((data) => {
-          setCurrentUserData(data);
-        })
-        .catch(() => {
+      const unsubscribe = onSnapshot(
+        doc(colRefP, userId),
+        (doc) => {
+          setCurrentUserData(doc.data().playerData);
+        },
+        (error) => {
+          console.error("There was an error in getting the current user data:", error.message);
           setCurrentUserData(null);
           logoutHandler();
-        });
+        }
+      );
+      return () => unsubscribe();
     }
-  }, [curUserDataUpdateCounter]);
+  }, []);
 
   //Signout handler
   const logoutHandler = () => {
@@ -140,7 +144,7 @@ const Profile = () => {
             <PlayerStats currentUserData={currentUserData} showEditProfile={setShowEditProfile} />
           </>
         ) : (
-          <EditProfile currentUserData={currentUserData} dataUpdateCounter={setCurUserDataUpdateCounter} count={curUserDataUpdateCounter} />
+          <EditProfile currentUserData={currentUserData} />
         )}
       </Box>
     </AppContainer>

@@ -62,7 +62,7 @@ export const userNameCheck = async (name) => {
 };
 
 //User creation
-export const handleUserCreation = async (email, password, username, playerData, playerRobodata) => {
+export const handleUserCreation = async (email, password, username, playerData, playerRobodata, playerPrivateData) => {
   let uid = null;
   //Create the user
   await createUserWithEmailAndPassword(auth, email, password);
@@ -81,9 +81,11 @@ export const handleUserCreation = async (email, password, username, playerData, 
       throw new Error("Error signing in user:", ex.message);
     });
   //Create document in players collection
-  await setDoc(doc(colRefP, uid), playerData);
-  //Create robodata collection within player document
-  await setDoc(doc(colRefP, uid, "collections", "robodata"), playerRobodata);
+  await setDoc(doc(colRefP, uid), {
+    playerData: playerData,
+    roboData: playerRobodata,
+    privateData: playerPrivateData,
+  });
   return uid;
 };
 
@@ -104,18 +106,18 @@ export const signInUser = async (email, password) => {
 //Save data after Game is over
 export const saveData = async (uid, playersData, winner) => {
   await updateDoc(doc(colRefP, uid), {
-    gamesPlayed: increment(1),
-    gamesWon: winner.index === "0" ? increment(1) : increment(0),
-    gold: increment(playersData[0].gameSessionData.goldEarned),
-    diamond: increment(playersData[0].gameSessionData.diamondEarned),
-    totalScore: increment(playersData[0].gameSessionData.runningScore),
+    "playerData.gamesPlayed": increment(1),
+    "playerData.gamesWon": winner.index === "0" ? increment(1) : increment(0),
+    "playerData.gold": increment(playersData[0].gameSessionData.goldEarned),
+    "playerData.diamond": increment(playersData[0].gameSessionData.diamondEarned),
+    "playerData.totalScore": increment(playersData[0].gameSessionData.runningScore),
   });
   await updateDoc(doc(colRefP, uid, "collections", "robodata"), {
-    gamesPlayed: increment(1),
-    gamesWon: winner.index === "1" ? increment(1) : increment(0),
-    gold: increment(playersData[1].gameSessionData.goldEarned),
-    diamond: increment(playersData[1].gameSessionData.diamondEarned),
-    totalScore: increment(playersData[1].gameSessionData.runningScore),
+    "roboData.gamesPlayed": increment(1),
+    "roboData.gamesWon": winner.index === "1" ? increment(1) : increment(0),
+    "roboData.gold": increment(playersData[1].gameSessionData.goldEarned),
+    "roboData.diamond": increment(playersData[1].gameSessionData.diamondEarned),
+    "roboData.totalScore": increment(playersData[1].gameSessionData.runningScore),
   });
 };
 
@@ -216,7 +218,7 @@ export const updateUserEmail = async (newEmail) => {
     await reAuthenticateUser();
     await updateEmail(auth.currentUser, newEmail);
   }
-  await updateDoc(doc(colRefP, auth.currentUser.uid), { email: newEmail });
+  await updateDoc(doc(colRefP, auth.currentUser.uid), { "playerData.email": newEmail });
   await updateProfile(auth.currentUser, {
     emailVerified: false,
   });
@@ -226,7 +228,7 @@ export const updateUserEmail = async (newEmail) => {
 //Update Username
 export const updateUsername = async (oldName, newName) => {
   await updateDoc(doc(colRefP, auth.currentUser.uid), {
-    name: newName,
+    "playerData.name": newName,
   });
   await updateDoc(doc(colRefPn, "unames"), { names: arrayRemove(oldName) });
   await updateDoc(doc(colRefPn, "unames"), { names: arrayUnion(newName) });
@@ -249,9 +251,7 @@ export const updateUserPassword = async (pwd) => {
 
 //Update Avatar
 export const updateAvatar = async (avatarUrl) => {
-  await updateDoc(doc(colRefP, auth.currentUser.uid), {
-    avatarUrl: avatarUrl,
-  });
+  await updateDoc(doc(colRefP, auth.currentUser.uid), { "playerData.avatarUrl": avatarUrl });
 };
 
 //Send Email Verification
@@ -264,7 +264,6 @@ export const verifyEmail = async () => {
 //Delete user account
 export const deleteUsersData = async (name) => {
   updateDoc(doc(colRefPn, "unames"), { names: arrayRemove(name) });
-  deleteDoc(doc(db, "players", auth.currentUser.uid, "collections", "robodata"));
   deleteDoc(doc(db, "players", auth.currentUser.uid));
 
   //Delete stored files
@@ -291,19 +290,18 @@ export const deleteUsersData = async (name) => {
 };
 
 //Delete the invite
-const deleteMyInvite = async (inviteId) => {
-  deleteDoc(doc(db, "invites", inviteId));
-  console.log(auth.currentUser.uid);
-  await updateDoc(doc(colRefP, auth.currentUser.uid), { hasInvite: false, inviteId: null });
+const deleteMyInvite = async (inviteDocId) => {
+  deleteDoc(doc(db, "invites", inviteDocId));
+  await updateDoc(doc(colRefP, auth.currentUser.uid), { "privateData.inviteId": [null, null], "privateData.joiningCode": null });
 };
 
 //Get current user invites
-const getMyInvite = async () => {
-  const docRef = doc(colRefP, auth.currentUser.uid);
+const getMyInvite = async (uid) => {
+  const docRef = doc(colRefP, uid);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    if (docSnap.data().inviteId !== "" && docSnap.data().inviteId !== null) {
-      const inviteRef = doc(ColRefInv, docSnap.data().inviteId);
+    if (docSnap.data().privateData.inviteId[0] !== "" && docSnap.data().privateData.inviteId[0] !== null) {
+      const inviteRef = doc(ColRefInv, docSnap.data().privateData.inviteId[0]);
       const inviteSnap = await getDoc(inviteRef);
       if (inviteSnap.exists()) {
         return inviteSnap.data();
