@@ -1,4 +1,4 @@
-import { Button, Paper, TextField, Typography } from "@mui/material";
+import { Alert, Button, Paper, TextField, Typography } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import AppContainer from "../layouts/AppContainer";
 import { testEmail, testPassword, testUsername } from "../utils";
@@ -128,6 +128,7 @@ const Register = () => {
         <Typography variant="h6" align="center" sx={{ fontWeight: "bold" }}>
           Register
         </Typography>
+        <Alert severity="error">Currently, we are not accepting new registrations. Please check back again later.</Alert>
         {/* <Divider variant="middle" palette="grey.100" /> */}
 
         <TextField
@@ -139,6 +140,7 @@ const Register = () => {
           error={!username ? true : false}
           helperText={usernameErrorText}
           defaultValue={searchParams.get("username") ? searchParams.get("username") : ""}
+          disabled={true}
         />
         <TextField
           id="email"
@@ -148,6 +150,7 @@ const Register = () => {
           onKeyUp={inputValidator}
           error={!email ? true : false}
           helperText={emailErrorText}
+          disabled={true}
         />
         <TextField
           id="password"
@@ -158,8 +161,9 @@ const Register = () => {
           onKeyUp={inputValidator}
           error={!password ? true : false}
           helperText={passwordErrorText}
+          disabled={true}
         />
-        <Button type="submit" variant="contained" disabled={submitBtnState ? true : false}>
+        <Button type="submit" variant="contained" disabled={true}>
           Register
         </Button>
       </Paper>
