@@ -12,6 +12,7 @@ import Gameover from "../components/Gameover";
 import { useNavigate } from "react-router-dom";
 import { saveData } from "../firebase";
 import { useRef } from "react";
+import LocalStorageContext from "../store/localStorage-context";
 
 const chance = new Chance();
 const passiveDice = globalVariables.default_dice[0];
@@ -20,6 +21,7 @@ const activeDice = globalVariables.default_dice[1];
 const GameRobo = () => {
   //Set States
   const playerCtx = useContext(PlayersContext);
+  const localStorageCtx = useContext(LocalStorageContext);
   const [rdiceImg, setRDiceImg] = useState(globalVariables.default_dice[1]);
   const [bdiceImg, setBDiceImg] = useState(globalVariables.default_dice[1]);
   const [turn, setTurn] = useState(0);
@@ -29,7 +31,7 @@ const GameRobo = () => {
   const [isGameOver, setIsGameOver] = useState(false);
   const [winner, setWinner] = useState({});
   const navigate = useNavigate();
-  const targetScore = localStorage.getItem("raceto100Target");
+  const targetScore = localStorageCtx.getData("raceto100Target", "target");
   const [autoRoll, setAutoRoll] = useState(false);
   const switchState = useRef();
   // const [searchParams] = useSearchParams();
@@ -190,7 +192,7 @@ const GameRobo = () => {
   //Hanlde Gameover
   if (isGameOver) {
     //Save Game Data to Firebase
-    const uid = localStorage.getItem("raceto100Auth");
+    const uid = localStorageCtx.getData("raceto100AppData", "auth");
     // const uid = searchParams.get("uid");
     if (uid) {
       saveData(uid, playersData, winner);

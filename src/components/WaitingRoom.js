@@ -1,26 +1,33 @@
+import { doc, onSnapshot } from "@firebase/firestore";
 import { Typography } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
-// import SocketContext from "../store/socket-context";
+import { ColRefInv } from "../firebase";
+import AppContext from "../store/app-context";
 
-const WaitingRoom = () => {
-  const [personWaiting, setPersonWaiting] = useState(null);
-  // const socket = useContext(SocketContext).socket;
+const WaitingRoom = ({ joiners }) => {
+  // const appDataCtx = useContext(AppContext);
+  // const [joiners, setJoiners] = useState(0);
 
   // useEffect(() => {
-  //   if (socket) {
-  //     socket.on("totalJoins", (totalJoins) => {
-  //       setPersonWaiting(totalJoins);
-  //     });
-  //   }
+  //   const unsub_listner3 = onSnapshot(
+  //     doc(ColRefInv, inviteId),
+  //     (doc) => {
+  //       setJoiners(doc.data().room.length);
+  //       appDataCtx.setData("roomsize", doc.data().room.length);
+  //     },
+  //     (error) => {
+  //       console.error("There was an error in getting number of joiners:", error.message);
+  //     }
+  //   );
   //   return () => {
-  //     socket.off("totalJoins");
+  //     unsub_listner3();
   //   };
-  // }, [socket, personWaiting]);
+  // }, []);
 
   return (
     <>
-      {personWaiting ? (
-        <Typography variant="caption">{personWaiting} person joined!</Typography>
+      {joiners > 1 ? (
+        <Typography variant="caption">{joiners - 1} person joined!</Typography>
       ) : (
         <Typography variant="caption">No one joined yet!</Typography>
       )}

@@ -19,7 +19,7 @@ export class Player {
       gamesWon: 0,
     };
     this.privateData = {
-      inviteId: [null, null],
+      inviteId: null,
       joiningCode: null,
     };
     this.gameSessionData = {

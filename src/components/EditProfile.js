@@ -25,7 +25,7 @@ import avatarList from "../store/avatar-list";
 import { useEffect } from "react";
 import PageLoading from "../layouts/PageLoading";
 
-const EditProfile = ({ currentUserData }) => {
+const EditProfile = ({ currentUserData, logoutHandler }) => {
   const [username, setUsername] = useState(null);
   const [email, setEmail] = useState(null);
   const [pwd, setPwd] = useState(null);
@@ -45,18 +45,6 @@ const EditProfile = ({ currentUserData }) => {
       }
     }
   }, []);
-
-  const handleSignout = async () => {
-    await signOut(auth)
-      .then(() => {
-        localStorage.removeItem("raceto100Auth");
-        console.log("User has signed out!");
-        navigate("/", { replace: true });
-      })
-      .catch((err) => {
-        console.error("Error signing out the user:", err.message);
-      });
-  };
 
   //Change Username
   const usernameChangeHandler = () => {
@@ -133,7 +121,7 @@ const EditProfile = ({ currentUserData }) => {
         updateUserEmail(email)
           .then(() => {
             console.log("Email address updated successfully!");
-            handleSignout();
+            logoutHandler();
           })
           .catch((ex) => {
             swalert.fire(swalertOptionsFail);
@@ -207,7 +195,7 @@ const EditProfile = ({ currentUserData }) => {
           deleteUsersData(currentUserData.name)
             .then(() => {
               swalert.fire("Account Deleted!", "Your account has been deleted. You have been signed out automatically.", "success");
-              handleSignout();
+              logoutHandler();
             })
             .catch((ex) => {
               swalert.fire("Could not delete!", "There was an error deleting the user.", "error");

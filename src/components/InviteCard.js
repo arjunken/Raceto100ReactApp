@@ -4,7 +4,17 @@ import TimeDisplayCreatedAt from "./TimeDisplayCreatedAt";
 import TimeDisplayExpiresIn from "./TimeDisplayExpiresIn";
 import WaitingRoom from "./WaitingRoom";
 
-const InviteCard = ({ invite, joiningCode, expiryHandlerSelf, expiryHandlerOthers, joinInviteHandler, roomSize, maxJoins, myGameInvite }) => {
+const InviteCard = ({
+  invite,
+  joiningCode,
+  expiryHandlerSelf,
+  expiryHandlerOthers,
+  joinInviteHandler,
+  roomSize,
+  maxJoins,
+  myGameInvite,
+  joiners,
+}) => {
   return (
     <Paper
       elevation={1}
@@ -43,7 +53,7 @@ const InviteCard = ({ invite, joiningCode, expiryHandlerSelf, expiryHandlerOther
       {joiningCode ? (
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
           <Button variant="contained">Start Game</Button>
-          <WaitingRoom />
+          <WaitingRoom joiners={joiners} />
         </Box>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>

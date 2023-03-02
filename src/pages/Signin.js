@@ -1,10 +1,11 @@
 import { Alert, Button, Link, Paper, TextField, Typography } from "@mui/material";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Navigation from "../components/Navigation";
 import { signInUser } from "../firebase";
 import { testEmail, testPassword } from "../utils";
 import AppContainer from "../layouts/AppContainer";
+import LocalStorageContext from "../store/localStorage-context";
 
 const Signin = () => {
   const [password, setPassword] = useState("");
@@ -12,6 +13,7 @@ const Signin = () => {
   const [email, setEmail] = useState(searchParams.get("email") ? searchParams.get("email") : "");
   const navigate = useNavigate();
   const [showInvalidCredAlert, setShowInvalidCredAlert] = useState("false");
+  const localStorageCtx = useContext(LocalStorageContext);
 
   const inputValidator = (e) => {
     switch (e.target.id) {
@@ -31,7 +33,7 @@ const Signin = () => {
 
     signInUser(email, password)
       .then((uid) => {
-        localStorage.setItem("raceto100Auth", uid);
+        localStorageCtx.setData("raceto100AppData", "auth", uid);
         navigate("/profile");
       })
       .catch((ex) => {

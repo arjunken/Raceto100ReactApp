@@ -1,10 +1,12 @@
 import { Box, Button, InputLabel, Slider, ToggleButton, ToggleButtonGroup } from "@mui/material";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import LocalStorageContext from "../store/localStorage-context";
 
 const PlayOptions = (props) => {
-  const [targetScore, setTargetScore] = useState(localStorage.getItem("raceto100Target"));
+  const localStorageCtx = useContext(LocalStorageContext);
+  const [targetScore, setTargetScore] = useState(localStorageCtx.getData("raceto100Target", "target"));
   const handleTargetScore = (e) => {
-    localStorage.setItem("raceto100Target", e.target.value);
+    localStorageCtx.setData("raceto100Target", "taregt", e.target.value);
     setTargetScore(e.target.value);
   };
   return (

@@ -1,11 +1,11 @@
-import { Avatar, Button, Divider, Link, Typography } from "@mui/material";
+import { Avatar, Button, Divider, Typography } from "@mui/material";
 import { Box } from "@mui/system";
 import { signOut } from "firebase/auth";
 import { useContext, useEffect, useState } from "react";
 import { Player } from "../classes/Player";
 import Navigation from "../components/Navigation";
 import PlayOptions from "../components/PlayOptions";
-import { auth, colRefP, getCurrentUserData } from "../firebase";
+import { auth, colRefP, deleteMyInvite } from "../firebase";
 import AppContainer from "../layouts/AppContainer";
 import PlayersContext from "../store/players-context";
 import { useNavigate } from "react-router-dom";
@@ -15,46 +15,80 @@ import withReactContent from "sweetalert2-react-content";
 import EditProfile from "../components/EditProfile";
 import PlayerStats from "../components/PlayerStats";
 import { doc, onSnapshot } from "@firebase/firestore";
+import LocalStorageContext from "../store/localStorage-context";
 
 const Profile = () => {
   const [currentUserData, setCurrentUserData] = useState(null);
   const [playOptionsToggle, setplayOptionsToggle] = useState(true);
   const [mode, setMode] = useState(default_registered_gameMode);
   const playerCtx = useContext(PlayersContext);
+  const localStorageCtx = useContext(LocalStorageContext);
   const navigate = useNavigate();
-  const userId = localStorage.getItem("raceto100Auth");
+  const userId = localStorageCtx.getData("raceto100AppData", "auth");
   const [showEditProfile, setShowEditProfile] = useState(false);
   const swalert = withReactContent(Swal);
-  useEffect(() => {
-    if (userId) {
-      const unsubscribe = onSnapshot(
-        doc(colRefP, userId),
-        (doc) => {
-          setCurrentUserData(doc.data().playerData);
-        },
-        (error) => {
-          console.error("There was an error in getting the current user data:", error.message);
-          setCurrentUserData(null);
-          logoutHandler();
-        }
-      );
-      return () => unsubscribe();
-    }
-  }, []);
 
   //Signout handler
   const logoutHandler = () => {
-    signOut(auth)
-      .then(() => {
-        setCurrentUserData(null);
-        localStorage.removeItem("raceto100Auth");
-        console.log("User has signed out!");
-        navigate("/", { replace: true });
-      })
-      .catch((err) => {
-        console.error("Error signing out the user:", err.message);
-      });
+    const openInvite = localStorageCtx.getData("raceto100AppData", "openInvite");
+    const proceedSigningOut = () => {
+      signOut(auth)
+        .then(() => {
+          setCurrentUserData(null);
+          localStorageCtx.clearData("raceto100AppData");
+          console.log("User has signed out!");
+          navigate("/", { replace: true });
+        })
+        .catch((err) => {
+          console.error("Error signing out the user:", err.message);
+        });
+    };
+    if (openInvite) {
+      swalert
+        .fire({
+          title: "Delete Invite",
+          text: "You have an open invite. Signing out will delete the invite. Do you still want to continue?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes, delete it!",
+        })
+        .then((result) => {
+          if (result.isConfirmed) {
+            deleteMyInvite(openInvite)
+              .then(() => {
+                console.log("Your invite has been deleted!");
+                proceedSigningOut();
+              })
+              .catch((ex) => {
+                console.error("Error deleting your invite", ex.message);
+              });
+          }
+        })
+        .catch((ex) => {
+          console.error("Error in deleting the invite:", ex.message);
+        });
+    } else {
+      proceedSigningOut();
+    }
   };
+
+  //Get current user Data
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      doc(colRefP, userId),
+      (doc) => {
+        setCurrentUserData(doc.data().playerData);
+      },
+      (error) => {
+        console.error("There was an error in getting the current user data:", error.message);
+        setCurrentUserData(null);
+        logoutHandler();
+      }
+    );
+    return () => unsubscribe();
+  }, [userId]);
 
   //Handle play button
   const playHandler = () => {
@@ -97,7 +131,7 @@ const Profile = () => {
 
   //Handle Taget Score
   const handleTargetScore = (e) => {
-    localStorage.setItem("raceto100Target", e.target.value);
+    localStorageCtx.setItem("raceto100Target", "target", e.target.value);
   };
 
   return (
@@ -144,7 +178,7 @@ const Profile = () => {
             <PlayerStats currentUserData={currentUserData} showEditProfile={setShowEditProfile} />
           </>
         ) : (
-          <EditProfile currentUserData={currentUserData} />
+          <EditProfile currentUserData={currentUserData} logoutHandler={logoutHandler} />
         )}
       </Box>
     </AppContainer>

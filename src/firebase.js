@@ -29,6 +29,7 @@ import {
 import { initializeApp } from "firebase/app";
 import Swal from "sweetalert2";
 import { deleteObject, getDownloadURL, getStorage, listAll, ref, uploadBytes } from "firebase/storage";
+import { typeOf } from "react-is";
 
 //Initialize Firebase
 const firebaseConfig = {
@@ -292,7 +293,7 @@ export const deleteUsersData = async (name) => {
 //Delete the invite
 const deleteMyInvite = async (inviteDocId) => {
   deleteDoc(doc(db, "invites", inviteDocId));
-  await updateDoc(doc(colRefP, auth.currentUser.uid), { "privateData.inviteId": [null, null], "privateData.joiningCode": null });
+  await updateDoc(doc(colRefP, auth.currentUser.uid), { "privateData.inviteId": null, "privateData.joiningCode": null });
 };
 
 //Get current user invites
@@ -300,8 +301,8 @@ const getMyInvite = async (uid) => {
   const docRef = doc(colRefP, uid);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    if (docSnap.data().privateData.inviteId[0] !== "" && docSnap.data().privateData.inviteId[0] !== null) {
-      const inviteRef = doc(ColRefInv, docSnap.data().privateData.inviteId[0]);
+    if (docSnap.data().privateData.inviteId !== "" && docSnap.data().privateData.inviteId !== null) {
+      const inviteRef = doc(ColRefInv, docSnap.data().privateData.inviteId);
       const inviteSnap = await getDoc(inviteRef);
       if (inviteSnap.exists()) {
         return inviteSnap.data();
@@ -310,4 +311,33 @@ const getMyInvite = async (uid) => {
   }
 };
 
-export { auth, db, colRefP, colRefPn, ColRefInv, getMyInvite, deleteMyInvite, reAuthenticateUser };
+//add player to the rooom
+const addPlayerToGameRoom = async (invite, player) => {
+  const inviteRef = doc(ColRefInv, invite.id);
+  const inviteSnap = await getDoc(inviteRef);
+  if (inviteSnap.exists()) {
+    await updateDoc(doc(ColRefInv, invite.id), { room: arrayUnion(player) });
+  }
+};
+
+//remove player from the rooom
+const removePlayerFromGameRoom = async (invite, player) => {
+  const inviteRef = doc(ColRefInv, invite.id);
+  const inviteSnap = await getDoc(inviteRef);
+  if (inviteSnap.exists()) {
+    await updateDoc(doc(ColRefInv, invite.id), { room: arrayRemove(player) });
+  }
+};
+
+export {
+  auth,
+  db,
+  colRefP,
+  colRefPn,
+  ColRefInv,
+  getMyInvite,
+  deleteMyInvite,
+  reAuthenticateUser,
+  addPlayerToGameRoom,
+  removePlayerFromGameRoom,
+};

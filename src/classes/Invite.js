@@ -1,4 +1,4 @@
-import { addDoc, doc, updateDoc } from "firebase/firestore";
+import { addDoc, doc, setDoc, updateDoc } from "firebase/firestore";
 import _ from "lodash";
 import { auth, ColRefInv, colRefP } from "../firebase";
 import { inviteMaxJoins } from "../globalVariables";
@@ -12,7 +12,7 @@ export class Invite {
     this.created_at = Date.now();
   }
   async publish(joiningCode) {
-    const docRef = await addDoc(ColRefInv, {
+    await setDoc(doc(ColRefInv, this.id), {
       id: this.id,
       invitedBy: this.invitedBy,
       maxJoins: this.maxJoins,
@@ -20,7 +20,7 @@ export class Invite {
       room: this.room,
     });
     await updateDoc(doc(colRefP, auth.currentUser.uid), {
-      "privateData.inviteId": [docRef.id, this.id],
+      "privateData.inviteId": this.id,
       "privateData.joiningCode": joiningCode,
     });
   }

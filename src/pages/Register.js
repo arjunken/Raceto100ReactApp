@@ -1,8 +1,8 @@
-import { Alert, Button, Paper, TextField, Typography } from "@mui/material";
+import { Button, Paper, TextField, Typography } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import AppContainer from "../layouts/AppContainer";
 import { testEmail, testPassword, testUsername } from "../utils";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import Navigation from "../components/Navigation";
 //Firebase
 import { handleUserCreation, userNameCheck } from "../firebase";
@@ -11,6 +11,7 @@ import { Player } from "../classes/Player";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import PageLoading from "../layouts/PageLoading";
+import LocalStorageContext from "../store/localStorage-context";
 
 const Register = () => {
   const [searchParams] = useSearchParams();
@@ -24,6 +25,7 @@ const Register = () => {
   const [passwordErrorText, setPasswordErrorText] = useState("");
   const swalert = withReactContent(Swal);
   const [showLoading, setShowLoading] = useState([false]);
+  const localStorageCtx = useContext(LocalStorageContext);
 
   const inputValidator = (e) => {
     switch (e.target.id) {
@@ -97,7 +99,7 @@ const Register = () => {
     //Create the player account and data template
     handleUserCreation(email, password, username, player.data, player.robodata, player.privateData)
       .then((uid) => {
-        localStorage.setItem("raceto100Auth", uid);
+        localStorageCtx.setData("raceto100AppData", "auth", uid);
         console.log("User has been created successfully with UID: ", uid);
         navigate("/profile");
       })
@@ -128,7 +130,6 @@ const Register = () => {
         <Typography variant="h6" align="center" sx={{ fontWeight: "bold" }}>
           Register
         </Typography>
-        <Alert severity="error">Currently, we are not accepting new registrations. Please check back again later.</Alert>
         {/* <Divider variant="middle" palette="grey.100" /> */}
 
         <TextField
@@ -140,7 +141,6 @@ const Register = () => {
           error={!username ? true : false}
           helperText={usernameErrorText}
           defaultValue={searchParams.get("username") ? searchParams.get("username") : ""}
-          disabled={true}
         />
         <TextField
           id="email"
@@ -150,7 +150,6 @@ const Register = () => {
           onKeyUp={inputValidator}
           error={!email ? true : false}
           helperText={emailErrorText}
-          disabled={true}
         />
         <TextField
           id="password"
@@ -161,9 +160,8 @@ const Register = () => {
           onKeyUp={inputValidator}
           error={!password ? true : false}
           helperText={passwordErrorText}
-          disabled={true}
         />
-        <Button type="submit" variant="contained" disabled={true}>
+        <Button type="submit" variant="contained" disabled={submitBtnState ? true : false}>
           Register
         </Button>
       </Paper>
