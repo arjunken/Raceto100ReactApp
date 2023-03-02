@@ -1,4 +1,4 @@
-import { Alert, Button, Divider, Paper, Snackbar, Typography } from "@mui/material";
+import { Alert, Avatar, Button, Divider, Paper, Snackbar, Typography } from "@mui/material";
 import { Box } from "@mui/system";
 import React, { useContext, useEffect } from "react";
 import { useState } from "react";
@@ -28,6 +28,8 @@ const RemoteGameLobby = () => {
   const [playInProgress, setPlayInProgress] = useState(false);
   const [showLoading, setShowLoading] = useState([false]);
   const [myGameInviteJoiners, setMyGameInviteJoiners] = useState(1);
+  const [lastPlayerJoined, setLastPlayerJoined] = useState(null);
+  const [lastInviteRemoved, setLastInviteRemoved] = useState(null);
   const swalert = withReactContent(Swal);
   const [openSBAlert, setOpenSBAlert] = useState({
     myInviteExpiry: false,
@@ -87,9 +89,11 @@ const RemoteGameLobby = () => {
             if (change.doc.data().invitedBy === player.data.name) {
               if (change.doc.data().room.length > myGameInviteJoiners) {
                 displaySBAlert({ ...openSBAlert, newJoin: true });
+                setLastPlayerJoined(change.doc.data().room[1]);
               } else {
                 displaySBAlert({ ...openSBAlert, dropJoin: true });
               }
+              setMyGameInvite(change.doc.data());
               setMyGameInviteJoiners(change.doc.data().room.length);
             }
 
@@ -177,13 +181,14 @@ const RemoteGameLobby = () => {
           deleteMyInvite(inviteId)
             .then(() => {
               console.log("Your invite has been deleted!");
+              setMyGameInvite(null);
+              setPlayInProgress(false);
+              setMyGameInviteJoiners(1);
+              localStorageCtx.setData("raceto100AppData", "openInvite", null);
             })
             .catch((ex) => {
               console.error("Error deleting your invite", ex.message);
             });
-          setMyGameInvite(null);
-          setPlayInProgress(false);
-          localStorageCtx.setData("raceto100AppData", "openInvite", null);
         } else {
           console.log("you're good");
         }
@@ -248,6 +253,7 @@ const RemoteGameLobby = () => {
     // }
     console.log("Requesting server to join invitation...");
     setShowLoading([true, "Please wait while the remote player start the game session...", () => quitJoinWaitHandler(invite)]);
+    setLastInviteRemoved(invite);
     addPlayerToGameRoom(invite, player)
       .then(() => {
         console.log("Successfully joined an invite");
@@ -358,21 +364,72 @@ const RemoteGameLobby = () => {
       </Snackbar>
       <Snackbar open={openSBAlert.newJoin} autoHideDuration={6000} onClose={() => setOpenSBAlert({ ...openSBAlert, newJoin: false })}>
         <Alert onClose={() => setOpenSBAlert({ ...openSBAlert, newJoin: false })} severity="success" sx={{ width: "100%" }}>
-          Someone joined your invite! Start the game.
+          {myGameInviteJoiners > 1 && (
+            <Box sx={{ display: "flex", gap: 2, flexDirection: "row", justifyContent: "flex-start", alignItems: "center" }}>
+              <Avatar
+                alt="avatar"
+                src={myGameInvite.room[1].data.avatarUrl}
+                sx={{ width: 56, height: 56, borderRadius: "50px" }}
+                variant="square"
+              />
+              <Typography>{myGameInvite.room[1].data.name} accepted your invite! Start the game.</Typography>
+            </Box>
+          )}
         </Alert>
       </Snackbar>
       <Snackbar
         open={openSBAlert.inviteCancelled}
         autoHideDuration={6000}
-        onClose={() => setOpenSBAlert({ ...openSBAlert, inviteCancelled: false })}
+        onClose={() => {
+          setOpenSBAlert({ ...openSBAlert, inviteCancelled: false });
+          setLastInviteRemoved(null);
+          setShowLoading(false);
+        }}
       >
-        <Alert onClose={() => setOpenSBAlert({ ...openSBAlert, inviteCancelled: false })} severity="warning" sx={{ width: "100%" }}>
-          The player cancelled the invite!
+        <Alert
+          onClose={() => {
+            setOpenSBAlert({ ...openSBAlert, inviteCancelled: false });
+            setLastInviteRemoved(null);
+            setShowLoading(false);
+          }}
+          severity="warning"
+          sx={{ width: "100%" }}
+        >
+          {lastInviteRemoved && (
+            <Box sx={{ display: "flex", gap: 2, flexDirection: "row", justifyContent: "flex-start", alignItems: "center" }}>
+              <Avatar
+                alt="avatar"
+                src={lastInviteRemoved.room[0].data.avatarUrl}
+                sx={{ width: 56, height: 56, borderRadius: "50px" }}
+                variant="square"
+              />
+              <Typography>{lastInviteRemoved.invitedBy} cancelled the invite! Join another invite</Typography>
+            </Box>
+          )}
         </Alert>
       </Snackbar>
-      <Snackbar open={openSBAlert.dropJoin} autoHideDuration={6000} onClose={() => setOpenSBAlert({ ...openSBAlert, dropJoin: false })}>
-        <Alert onClose={() => setOpenSBAlert({ ...openSBAlert, dropJoin: false })} severity="warning" sx={{ width: "100%" }}>
-          A player dropped from your invite!
+      <Snackbar
+        open={openSBAlert.dropJoin}
+        autoHideDuration={6000}
+        onClose={() => {
+          setOpenSBAlert({ ...openSBAlert, dropJoin: false });
+          setLastPlayerJoined(null);
+        }}
+      >
+        <Alert
+          onClose={() => {
+            setOpenSBAlert({ ...openSBAlert, dropJoin: false });
+            setLastPlayerJoined(null);
+          }}
+          severity="warning"
+          sx={{ width: "100%" }}
+        >
+          {lastPlayerJoined && (
+            <Box sx={{ display: "flex", gap: 2, flexDirection: "row", justifyContent: "flex-start", alignItems: "center" }}>
+              <Avatar alt="avatar" src={lastPlayerJoined.data.avatarUrl} sx={{ width: 56, height: 56, borderRadius: "50px" }} variant="square" />
+              <Typography>{lastPlayerJoined.data.name} dropped your invite! Wait for another player to accept.</Typography>
+            </Box>
+          )}
         </Alert>
       </Snackbar>
     </AppContainer>
