@@ -329,6 +329,15 @@ const removePlayerFromGameRoom = async (invite, player) => {
   }
 };
 
+//Update Game in Session
+const updateGameInSession = async (inviteId) => {
+  const inviteRef = doc(ColRefInv, inviteId);
+  const inviteSnap = await getDoc(inviteRef);
+  if (inviteSnap.exists()) {
+    await updateDoc(doc(ColRefInv, inviteId), { isGameInSession: true });
+  }
+};
+
 export {
   auth,
   db,
@@ -340,4 +349,5 @@ export {
   reAuthenticateUser,
   addPlayerToGameRoom,
   removePlayerFromGameRoom,
+  updateGameInSession,
 };

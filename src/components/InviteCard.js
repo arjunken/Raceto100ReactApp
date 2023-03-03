@@ -14,6 +14,7 @@ const InviteCard = ({
   maxJoins,
   myGameInvite,
   joiners,
+  initiateMyRemoteGame,
 }) => {
   return (
     <Paper
@@ -52,7 +53,9 @@ const InviteCard = ({
       )}
       {joiningCode ? (
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-          <Button variant="contained">Start Game</Button>
+          <Button variant="contained" onClick={initiateMyRemoteGame} disabled={joiners > 1 ? false : true}>
+            Start Game
+          </Button>
           <WaitingRoom joiners={joiners} />
         </Box>
       ) : (

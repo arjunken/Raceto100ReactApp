@@ -8,6 +8,7 @@ export class Invite {
     this.id = inviteId;
     this.invitedBy = player.data.name;
     this.maxJoins = inviteMaxJoins;
+    this.isGameInSession = false;
     this.room = [player];
     this.created_at = Date.now();
   }

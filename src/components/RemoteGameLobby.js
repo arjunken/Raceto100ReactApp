@@ -2,7 +2,6 @@ import { Alert, Avatar, Button, Divider, Paper, Snackbar, Typography } from "@mu
 import { Box } from "@mui/system";
 import React, { useContext, useEffect } from "react";
 import { useState } from "react";
-// import { useNavigate } from "react-router-dom";
 import InviteCard from "./InviteCard";
 import AppContainer from "../layouts/AppContainer";
 import PlayersContext from "../store/players-context";
@@ -12,12 +11,19 @@ import _ from "lodash";
 import PageLoading from "../layouts/PageLoading";
 import { nanoid } from "../globalVariables";
 import { Invite } from "../classes/Invite";
-import { addPlayerToGameRoom, ColRefInv, colRefP, deleteMyInvite, getMyInvite, removePlayerFromGameRoom } from "../firebase";
+import {
+  addPlayerToGameRoom,
+  ColRefInv,
+  colRefP,
+  deleteMyInvite,
+  getMyInvite,
+  removePlayerFromGameRoom,
+  updateGameInSession,
+} from "../firebase";
 import { doc, onSnapshot } from "@firebase/firestore";
 import LocalStorageContext from "../store/localStorage-context";
 
-const RemoteGameLobby = () => {
-  // const navigate = useNavigate();
+const RemoteGameLobby = ({ startRemoteGame }) => {
   const playerCtx = useContext(PlayersContext);
   const localStorageCtx = useContext(LocalStorageContext);
   const [currentUserData, setCurrentUserData] = useState(null);
@@ -30,6 +36,7 @@ const RemoteGameLobby = () => {
   const [myGameInviteJoiners, setMyGameInviteJoiners] = useState(1);
   const [lastPlayerJoined, setLastPlayerJoined] = useState(null);
   const [lastInviteRemoved, setLastInviteRemoved] = useState(null);
+  const [gameInSession, setGameInSession] = useState(false);
   const swalert = withReactContent(Swal);
   const [openSBAlert, setOpenSBAlert] = useState({
     myInviteExpiry: false,
@@ -86,6 +93,7 @@ const RemoteGameLobby = () => {
             });
           }
           if (change.type === "modified") {
+            //Listen to own invite changes
             if (change.doc.data().invitedBy === player.data.name) {
               if (change.doc.data().room.length > myGameInviteJoiners) {
                 displaySBAlert({ ...openSBAlert, newJoin: true });
@@ -95,6 +103,12 @@ const RemoteGameLobby = () => {
               }
               setMyGameInvite(change.doc.data());
               setMyGameInviteJoiners(change.doc.data().room.length);
+            }
+            //Listen to the invite changes that the player joined
+            if (change.doc.data().room.length > 1 && change.doc.data().room[1].data.name === player.data.name) {
+              if (change.doc.data().isGameInSession) {
+                initiateRemoteGameHandler(change.doc.data());
+              }
             }
 
             setPrivateInvites((preInvites) => {
@@ -200,18 +214,20 @@ const RemoteGameLobby = () => {
 
   //Handlers for invites expiry
   const myGameInviteExpiryHandler = (inviteId) => {
-    setMyGameInvite(null);
-    setPlayInProgress(false);
-    deleteMyInvite(inviteId)
-      .then(() => {
-        console.log("Your invite has been deleted!");
-      })
-      .catch((ex) => {
-        console.error("Error deleting your invite", ex.message);
-      });
-    displaySBAlert({ ...openSBAlert, myInviteExpiry: true });
-    //clear the flag in the context to
-    localStorageCtx.setData("raceto100AppData", "openInvite", null);
+    if (myGameInviteJoiners > 1) {
+      setMyGameInvite(null);
+      setPlayInProgress(false);
+      deleteMyInvite(inviteId)
+        .then(() => {
+          console.log("Your invite has been deleted!");
+        })
+        .catch((ex) => {
+          console.error("Error deleting your invite", ex.message);
+        });
+      displaySBAlert({ ...openSBAlert, myInviteExpiry: true });
+      //clear the flag in the context to
+      localStorageCtx.setData("raceto100AppData", "openInvite", null);
+    }
   };
 
   const privateInvitesExpiryHandler = (inviteId) => {
@@ -261,12 +277,11 @@ const RemoteGameLobby = () => {
       .catch((ex) => {
         console.error("Error joining an invite:", ex.message);
       });
-    // setShowLoading([false]);
   };
 
   //Handler for the button on pageloading - waiting for game to start
   const quitJoinWaitHandler = (invite) => {
-    setShowLoading(false);
+    setShowLoading([false]);
     removePlayerFromGameRoom(invite, player)
       .then(() => {
         console.log("Successfully joined an invite");
@@ -274,6 +289,34 @@ const RemoteGameLobby = () => {
       .catch((ex) => {
         console.error("Error joining an invite:", ex.message);
       });
+  };
+
+  //Handler for starting remote game invited by me
+  const initiateMyRemoteGameHandler = (inviteId) => {
+    if (myGameInviteJoiners) {
+      updateGameInSession(inviteId)
+        .then(() => {
+          //Flushout previously stored sessions in the context store
+          playerCtx.resetPlayers();
+          //add players into the context store
+          playerCtx.addPlayer(myGameInvite.room[0]);
+          playerCtx.addPlayer(myGameInvite.room[1]);
+          startRemoteGame();
+        })
+        .catch((ex) => {
+          console.error("Error updating GameInSession flag:", ex.message);
+        });
+    }
+  };
+
+  //Handler for starting remote game invited by other players
+  const initiateRemoteGameHandler = (invite) => {
+    setShowLoading([false]);
+    playerCtx.resetPlayers();
+    //add players into the context store
+    playerCtx.addPlayer(invite.room[1]);
+    playerCtx.addPlayer(invite.room[0]);
+    startRemoteGame();
   };
 
   return (
@@ -309,6 +352,7 @@ const RemoteGameLobby = () => {
               invite={myGameInvite}
               joiners={myGameInviteJoiners}
               joiningCode={"fds4342"}
+              initiateMyRemoteGame={() => initiateMyRemoteGameHandler(myGameInvite.id)}
               expiryHandlerSelf={() => myGameInviteExpiryHandler(myGameInvite.id)}
             />
           </Box>
