@@ -4,11 +4,17 @@ import { auth, ColRefInv, colRefP } from "../firebase";
 import { inviteMaxJoins } from "../globalVariables";
 
 export class Invite {
-  constructor(inviteId, player) {
+  constructor(inviteId, player, targetScore = 100) {
     this.id = inviteId;
     this.invitedBy = player.data.name;
     this.maxJoins = inviteMaxJoins;
     this.isGameInSession = false;
+    this.whoseTurn = player.data.name;
+    this.targetScore = targetScore;
+    this.remoteDiceRes = {
+      red: 0,
+      black: 0,
+    };
     this.room = [player];
     this.created_at = Date.now();
   }
@@ -17,8 +23,12 @@ export class Invite {
       id: this.id,
       invitedBy: this.invitedBy,
       maxJoins: this.maxJoins,
-      created_at: this.created_at,
+      isGameInSession: this.isGameInSession,
+      whoseTurn: this.whoseTurn,
+      targetScore: this.targetScore,
+      remoteDiceRes: this.remoteDiceRes,
       room: this.room,
+      created_at: this.created_at,
     });
     await updateDoc(doc(colRefP, auth.currentUser.uid), {
       "privateData.inviteId": this.id,

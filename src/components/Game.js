@@ -4,41 +4,83 @@ import Chance from "chance";
 //App level imports
 import PlayersContext from "../store/players-context";
 import { globalVariables } from "../globalVariables";
-import GameScoreDisplay from "./GameScoreDisplay";
-import DiceAnimation from "./DiceAnimation";
-import GameProgressBox from "./GameProgressBox";
-import PlayerAvatar from "./PlayerAvatar";
-import Gameover from "./Gameover";
+import GameScoreDisplay from "../components/GameScoreDisplay";
+import DiceAnimation from "../components/DiceAnimation";
+import GameProgressBox from "../components/GameProgressBox";
+import PlayerAvatar from "../components/PlayerAvatar";
+import Gameover from "../components/Gameover";
 import { useNavigate } from "react-router-dom";
-import { saveData } from "../firebase";
+import { ColRefInv, saveData, saveDiceResults, updatePlayerTurn } from "../firebase";
 import { useRef } from "react";
 import LocalStorageContext from "../store/localStorage-context";
+import AppContext from "../store/app-context";
+import { doc, onSnapshot, query, where } from "firebase/firestore";
+import _ from "lodash";
 
 const chance = new Chance();
 const passiveDice = globalVariables.default_dice[0];
 const activeDice = globalVariables.default_dice[1];
 
-const Game = () => {
+const Game = ({ endRemoteGame }) => {
   //Set States
   const playerCtx = useContext(PlayersContext);
   const localStorageCtx = useContext(LocalStorageContext);
   const [rdiceImg, setRDiceImg] = useState(globalVariables.default_dice[1]);
   const [bdiceImg, setBDiceImg] = useState(globalVariables.default_dice[1]);
   const [turn, setTurn] = useState(0);
-  const [rollBtnState, setRollBtnState] = useState(false);
+  const [rollBtnState, setRollBtnState] = useState(true);
   const [gameMode, setGameMode] = useState(false);
   const [diceScoreSum, setDiceScoreSum] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [winner, setWinner] = useState({});
   const navigate = useNavigate();
-  const targetScore = localStorageCtx.getData("raceto100Target", "target");
   const [autoRoll, setAutoRoll] = useState(false);
   const switchState = useRef();
+  const appDataCtx = useContext(AppContext);
+  const [isFirstRun, setIsFirstRun] = useState(true);
   // const [searchParams] = useSearchParams();
 
-  let playersData = [];
-  let numberOfPlayers = 0;
+  const gameInvite = appDataCtx.appData.get("joinedInvite");
+  const targetScore = gameInvite.targetScore;
+  const localUser = localStorageCtx.getData("raceto100AppData", "localUser");
 
+  useEffect(() => {
+    if (isFirstRun) {
+      setIsFirstRun(false);
+      return;
+    }
+    console.log("Current Turn: ", turn);
+  }, [turn]);
+
+  //Setup Firebase listener to the invite
+  useEffect(() => {
+    const unsub_listner4 = onSnapshot(
+      doc(ColRefInv, gameInvite.id),
+      (doc) => {
+        const turnIndex = _.findIndex(doc.data().room, { data: { name: doc.data().whoseTurn } });
+        setTurn(turnIndex);
+        if (doc.data().whoseTurn === localUser.name) {
+          setRollBtnState(false);
+        }
+
+        // else {
+        //   performRemotePlay(doc.data().remoteDiceRes);
+        // }
+      },
+      (error) => {
+        console.error("There was an error in getting the invite data:", error.message);
+        endRemoteGame();
+      }
+    );
+
+    return () => unsub_listner4();
+  }, []);
+
+  //Get the players
+  const playersData = playerCtx.players;
+  const numberOfPlayers = playersData.length;
+
+  //Handle browser tab close by user
   const handleTabClose = (event) => {
     event.preventDefault();
     event.returnValue = "";
@@ -53,8 +95,6 @@ const Game = () => {
   }, []);
 
   if (playerCtx.players.length) {
-    playersData = playerCtx.players;
-    numberOfPlayers = playersData.length;
   } else if (sessionStorage.getItem("raceto100PlayersData")) {
     playersData = JSON.parse(sessionStorage.getItem("raceto100PlayersData"));
     numberOfPlayers = playersData.length;
@@ -92,7 +132,7 @@ const Game = () => {
     setDiceScoreSum(0);
     setIsGameOver(false);
     setWinner({});
-    navigate("/");
+    endRemoteGame();
   };
 
   //Handle Dice Rolls
@@ -100,69 +140,83 @@ const Game = () => {
     setGameMode(true);
     //set player roll btn disabled
     setRollBtnState(true);
-    // Loop all the players
-    let i = 0;
-
-    do {
-      setRDiceImg(globalVariables.red_dice_faces[0]);
-      setBDiceImg(globalVariables.black_dice_faces[0]);
-      await sleep(1500);
-      let diceResultsRed = Math.floor(Math.random() * 6 + 1);
-      let diceResultsBlack = Math.floor(Math.random() * 6 + 1);
-      //define Shakuni's probabilities
-      if (i === 1) {
-        diceResultsRed = chance.weighted([1, 2, 3, 4, 5, 6], [5, 10, 15, 20, 30, 20]);
-        diceResultsBlack = chance.weighted([1, 2, 3, 4, 5, 6], [10, 10, 20, 30, 20, 10]);
-      }
-      playersData[i].gameSessionData.prevScore = playersData[i].gameSessionData.runningScore;
-      const score = playersData[i].gameSessionData.runningScore + diceResultsRed + diceResultsBlack;
-      if (score > targetScore) {
-        playersData[i].gameSessionData.prevScore + Math.min(diceResultsRed, diceResultsBlack) <= targetScore &&
-          (playersData[i].gameSessionData.runningScore += Math.min(diceResultsRed, diceResultsBlack));
-      } else {
-        playersData[i].gameSessionData.runningScore += diceResultsRed + diceResultsBlack;
-      }
-      //Set Gold and Diamonds Earned
-      if (diceResultsBlack === diceResultsRed) {
-        playersData[i].gameSessionData.goldEarned += 1;
-      }
-      if (diceResultsBlack + diceResultsRed === 12) {
-        playersData[i].gameSessionData.diamondEarned += 1;
-      }
-      //save players data to local storage
-      setRDiceImg(globalVariables.red_dice_faces[diceResultsRed]);
-      setBDiceImg(globalVariables.black_dice_faces[diceResultsBlack]);
-      sessionStorage.setItem("raceto100PlayersData", JSON.stringify(playersData));
-      // sessionStorage.setItem("raceto100SavedTurn", i);
-      await sleep(1200);
-      //store the session data in Context
-      setDiceScoreSum(diceResultsRed + diceResultsBlack);
-      await sleep(1000);
-      if (playersData[i].gameSessionData.runningScore >= targetScore) {
-        setIsGameOver(true);
-        playersData[i].gameSessionData.winner = true;
-        //transfer data to data from local storage to context
-        playerCtx.players = playersData;
-        setWinner({
-          name: playersData[i].data.name,
-          index: i,
-        });
-        //Reset session storage
-        sessionStorage.removeItem("raceto100PlayersData");
-        return;
-      }
-      i++;
-      if (i === numberOfPlayers) {
-        const autoRoll = switchState.current.firstChild.checked;
-        autoRoll && (i = 0);
-      }
-      setTurn(i);
+    //Show dice animation for 1500 ms
+    setRDiceImg(globalVariables.red_dice_faces[0]);
+    setBDiceImg(globalVariables.black_dice_faces[0]);
+    await sleep(1500);
+    //Get the random dice number
+    const diceResultsRed = Math.floor(Math.random() * 6 + 1);
+    const diceResultsBlack = Math.floor(Math.random() * 6 + 1);
+    //Save the generated random number to Firebase
+    // saveDiceResults(
+    //   {
+    //     red: diceResultsRed,
+    //     black: diceResultsBlack,
+    //   },
+    //   gameInvite.id
+    // );
+    //Store scores in memory
+    playersData[turn].gameSessionData.prevScore = playersData[turn].gameSessionData.runningScore;
+    const score = playersData[turn].gameSessionData.runningScore + diceResultsRed + diceResultsBlack;
+    if (score > targetScore) {
+      playersData[turn].gameSessionData.prevScore + Math.min(diceResultsRed, diceResultsBlack) <= targetScore &&
+        (playersData[turn].gameSessionData.runningScore += Math.min(diceResultsRed, diceResultsBlack));
+    } else {
+      playersData[turn].gameSessionData.runningScore += diceResultsRed + diceResultsBlack;
+    }
+    //Set Gold and Diamonds Earned
+    if (diceResultsBlack === diceResultsRed) {
+      playersData[turn].gameSessionData.goldEarned += 1;
+    }
+    if (diceResultsBlack + diceResultsRed === 12) {
+      playersData[turn].gameSessionData.diamondEarned += 1;
+    }
+    //show Dice results
+    setRDiceImg(globalVariables.red_dice_faces[diceResultsRed]);
+    setBDiceImg(globalVariables.black_dice_faces[diceResultsBlack]);
+    await sleep(1200);
+    //store the session data in Context
+    setDiceScoreSum(diceResultsRed + diceResultsBlack);
+    await sleep(1000);
+    if (playersData[turn].gameSessionData.runningScore >= targetScore) {
+      setIsGameOver(true);
+      playersData[turn].gameSessionData.winner = true;
+      //transfer data to data from local storage to context
+      playerCtx.players = playersData;
+      setWinner({
+        name: playersData[turn].data.name,
+        index: turn,
+      });
+      return;
+    }
+    if (turn === numberOfPlayers - 1) {
+      const autoRoll = switchState.current.firstChild.checked;
+      autoRoll && setTurn(0);
+    }
+    if (turn < numberOfPlayers - 1) {
+      //Change WhoseTurn in firebase
+      updatePlayerTurn(turn + 1, gameInvite.id);
       setDiceScoreSum(0);
-    } while (i < numberOfPlayers);
-    setTurn(0);
-    setRollBtnState(false);
-    setGameMode(false);
+      setGameMode(false);
+    } else {
+      updatePlayerTurn(0, gameInvite.id);
+      setGameMode(false);
+      setDiceScoreSum(0);
+    }
   };
+
+  // const performRemotePlay = async (remoteDiceRes) => {
+  //   setRDiceImg(globalVariables.red_dice_faces[0]);
+  //   setBDiceImg(globalVariables.black_dice_faces[0]);
+  //   await sleep(1500);
+  //   //show Dice results
+  //   setRDiceImg(globalVariables.red_dice_faces[remoteDiceRes.red]);
+  //   setBDiceImg(globalVariables.black_dice_faces[remoteDiceRes.black]);
+  //   await sleep(1200);
+  //   //store the session data in Context
+  //   setDiceScoreSum(remoteDiceRes.red + remoteDiceRes.black);
+  //   await sleep(1000);
+  // };
 
   //Handle Play Again
   const playAgainHandler = () => {
@@ -250,7 +304,7 @@ const Game = () => {
           <PlayerAvatar playerName={playersData[1].data.name} avatarURL={playersData[1].data.avatarUrl} />
         </Grid>
         <Grid item md={2} xs={4}>
-          <DiceAnimation diceImg={turn === 1 ? [rdiceImg, bdiceImg, diceScoreSum] : [passiveDice]} />
+          <DiceAnimation diceImg={turn === 1 ? (gameMode ? [rdiceImg, bdiceImg, diceScoreSum] : [activeDice]) : [passiveDice]} />
         </Grid>
         <Grid item md={8} xs={12}>
           <GameProgressBox>

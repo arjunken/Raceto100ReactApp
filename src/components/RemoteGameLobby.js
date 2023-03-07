@@ -22,10 +22,12 @@ import {
 } from "../firebase";
 import { doc, onSnapshot } from "@firebase/firestore";
 import LocalStorageContext from "../store/localStorage-context";
+import AppContext from "../store/app-context";
 
 const RemoteGameLobby = ({ startRemoteGame }) => {
   const playerCtx = useContext(PlayersContext);
   const localStorageCtx = useContext(LocalStorageContext);
+  const appDataCtx = useContext(AppContext);
   const [currentUserData, setCurrentUserData] = useState(null);
   const player = _.pick(playerCtx.players[0], ["data.name", "data.avatarUrl", "gameSessionData"]);
   const [myGameInvite, setMyGameInvite] = useState(null);
@@ -38,6 +40,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
   const [lastInviteRemoved, setLastInviteRemoved] = useState(null);
   const [gameInSession, setGameInSession] = useState(false);
   const swalert = withReactContent(Swal);
+  const targetScore = localStorage.getItem("raceto100Target");
   const [openSBAlert, setOpenSBAlert] = useState({
     myInviteExpiry: false,
     newJoin: false,
@@ -98,6 +101,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
               if (change.doc.data().room.length > myGameInviteJoiners) {
                 displaySBAlert({ ...openSBAlert, newJoin: true });
                 setLastPlayerJoined(change.doc.data().room[1]);
+                appDataCtx.setData("joinedInvite", change.doc.data());
               } else {
                 displaySBAlert({ ...openSBAlert, dropJoin: true });
               }
@@ -162,7 +166,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
           const inviteId = nanoid(20);
           const joiningCode = nanoid(6);
           setPlayInProgress(true);
-          const invite = new Invite(inviteId, player);
+          const invite = new Invite(inviteId, player, targetScore);
           invite
             .publish(joiningCode)
             .then(() => {
@@ -273,6 +277,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
     addPlayerToGameRoom(invite, player)
       .then(() => {
         console.log("Successfully joined an invite");
+        appDataCtx.setData("joinedInvite", invite);
       })
       .catch((ex) => {
         console.error("Error joining an invite:", ex.message);
@@ -284,10 +289,10 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
     setShowLoading([false]);
     removePlayerFromGameRoom(invite, player)
       .then(() => {
-        console.log("Successfully joined an invite");
+        console.log("Successfully removed from the invite");
       })
       .catch((ex) => {
-        console.error("Error joining an invite:", ex.message);
+        console.error("Error removing player from an invite:", ex.message);
       });
   };
 
@@ -314,8 +319,8 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
     setShowLoading([false]);
     playerCtx.resetPlayers();
     //add players into the context store
-    playerCtx.addPlayer(invite.room[1]);
     playerCtx.addPlayer(invite.room[0]);
+    playerCtx.addPlayer(invite.room[1]);
     startRemoteGame();
   };
 

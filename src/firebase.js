@@ -338,6 +338,24 @@ const updateGameInSession = async (inviteId) => {
   }
 };
 
+//Update player turn
+const updatePlayerTurn = async (index, inviteId) => {
+  const inviteRef = doc(ColRefInv, inviteId);
+  const inviteSnap = await getDoc(inviteRef);
+  if (inviteSnap.exists()) {
+    await updateDoc(doc(ColRefInv, inviteId), { whoseTurn: inviteSnap.data().room[index].data.name });
+  }
+};
+
+//Save Dice Results
+const saveDiceResults = async (diceRes, inviteId) => {
+  const inviteRef = doc(ColRefInv, inviteId);
+  const inviteSnap = await getDoc(inviteRef);
+  if (inviteSnap.exists()) {
+    await updateDoc(doc(ColRefInv, inviteId), { remoteDiceRes: diceRes });
+  }
+};
+
 export {
   auth,
   db,
@@ -350,4 +368,6 @@ export {
   addPlayerToGameRoom,
   removePlayerFromGameRoom,
   updateGameInSession,
+  updatePlayerTurn,
+  saveDiceResults,
 };

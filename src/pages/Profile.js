@@ -80,6 +80,8 @@ const Profile = () => {
       doc(colRefP, userId),
       (doc) => {
         setCurrentUserData(doc.data().playerData);
+        //Store current user in the local storage
+        localStorageCtx.setData("raceto100AppData", "localUser", doc.data().playerData);
       },
       (error) => {
         console.error("There was an error in getting the current user data:", error.message);
