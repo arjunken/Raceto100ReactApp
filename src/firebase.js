@@ -292,6 +292,8 @@ export const deleteUsersData = async (name) => {
 
 //Delete the invite
 const deleteMyInvite = async (inviteDocId) => {
+  //Delete all the documents in the subcollection gameSessionData
+
   deleteDoc(doc(db, "invites", inviteDocId));
   await updateDoc(doc(colRefP, auth.currentUser.uid), { "privateData.inviteId": null, "privateData.joiningCode": null });
 };
@@ -343,7 +345,7 @@ const updatePlayerTurn = async (index, inviteId) => {
   const inviteRef = doc(ColRefInv, inviteId);
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
-    await updateDoc(doc(ColRefInv, inviteId), { whoseTurn: inviteSnap.data().room[index].data.name });
+    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playerTurn"), { whoseTurn: inviteSnap.data().room[index].data.name });
   }
 };
 

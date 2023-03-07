@@ -57,12 +57,11 @@ const Game = ({ endRemoteGame }) => {
     const unsub_listner4 = onSnapshot(
       doc(ColRefInv, gameInvite.id),
       (doc) => {
-        const turnIndex = _.findIndex(doc.data().room, { data: { name: doc.data().whoseTurn } });
-        setTurn(turnIndex);
-        if (doc.data().whoseTurn === localUser.name) {
-          setRollBtnState(false);
-        }
-
+        // const turnIndex = _.findIndex(doc.data().room, { data: { name: doc.data().whoseTurn } });
+        // setTurn(turnIndex);
+        // if (doc.data().whoseTurn === localUser.name) {
+        //   setRollBtnState(false);
+        // }
         // else {
         //   performRemotePlay(doc.data().remoteDiceRes);
         // }

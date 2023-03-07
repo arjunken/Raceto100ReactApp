@@ -9,12 +9,7 @@ export class Invite {
     this.invitedBy = player.data.name;
     this.maxJoins = inviteMaxJoins;
     this.isGameInSession = false;
-    this.whoseTurn = player.data.name;
     this.targetScore = targetScore;
-    this.remoteDiceRes = {
-      red: 0,
-      black: 0,
-    };
     this.room = [player];
     this.created_at = Date.now();
   }
@@ -24,12 +19,12 @@ export class Invite {
       invitedBy: this.invitedBy,
       maxJoins: this.maxJoins,
       isGameInSession: this.isGameInSession,
-      whoseTurn: this.whoseTurn,
       targetScore: this.targetScore,
-      remoteDiceRes: this.remoteDiceRes,
       room: this.room,
       created_at: this.created_at,
     });
+    await setDoc(doc(ColRefInv, this.id, "gameSessionData", "playerTurn"), { whoseTurn: null });
+    await setDoc(doc(ColRefInv, this.id, "gameSessionData", "remoteDiceRes"), { remoteDiceRes: null });
     await updateDoc(doc(colRefP, auth.currentUser.uid), {
       "privateData.inviteId": this.id,
       "privateData.joiningCode": joiningCode,
