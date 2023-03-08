@@ -44,7 +44,7 @@ const Game = ({ endRemoteGame }) => {
   const targetScore = gameInvite.targetScore;
   const localUser = localStorageCtx.getData("raceto100AppData", "localUser");
 
-  //Setup Firebase listener to the invite
+  //Setup Firebase listeners to the invite
   useEffect(() => {
     //Listen to turn changes
     const unsub_listner4 = onSnapshot(
@@ -57,7 +57,7 @@ const Game = ({ endRemoteGame }) => {
         }
       },
       (error) => {
-        console.error("There was an error in getting the invite data:", error.message);
+        console.error("There was an error in identifying the player turn:", error.message);
         endRemoteGame();
       }
     );
@@ -66,15 +66,28 @@ const Game = ({ endRemoteGame }) => {
     const unsub_listner5 = onSnapshot(
       doc(ColRefInv, gameInvite.id, "gameSessionData", "remoteDiceRes"),
       (doc) => {
-        doc.data().remoteDiceRes && performRemotePlay(doc.data().remoteDiceRes);
+        doc.data().remoteDiceRes && performRemoteDiceAnim(doc.data().remoteDiceRes);
       },
       (error) => {
-        console.error("There was an error in getting the invite data:", error.message);
+        console.error("There was an error in getting the remote player dice results:", error.message);
+        endRemoteGame();
+      }
+    );
+
+    ////Listen to remote player game data changes
+    const unsub_listner6 = onSnapshot(
+      doc(ColRefInv, gameInvite.id, "gameSessionData", "remotePlayerGameData"),
+      (doc) => {
+        doc.data().remotePlayerGameData && performRemoteBarAnim(doc.data().remotePlayerGameData, doc.data().turn);
+      },
+      (error) => {
+        console.error("There was an error in getting the remote player game data:", error.message);
         endRemoteGame();
       }
     );
 
     return () => {
+      unsub_listner6();
       unsub_listner5();
       unsub_listner4();
     };
@@ -147,7 +160,26 @@ const Game = ({ endRemoteGame }) => {
     //Get the random dice number
     const diceResultsRed = Math.floor(Math.random() * 6 + 1);
     const diceResultsBlack = Math.floor(Math.random() * 6 + 1);
-    //Store scores in memory
+    //Save the generated random number to Firebase
+    saveDiceResults(
+      {
+        red: diceResultsRed,
+        black: diceResultsBlack,
+      },
+      gameInvite.id
+    );
+    //Show dice animation for 1500 ms
+    setRDiceImg(globalVariables.red_dice_faces[0]);
+    setBDiceImg(globalVariables.black_dice_faces[0]);
+    await sleep(1500);
+    //show Dice results
+    setRDiceImg(globalVariables.red_dice_faces[diceResultsRed]);
+    setBDiceImg(globalVariables.black_dice_faces[diceResultsBlack]);
+    await sleep(1200);
+    //store the session data in Context
+    setDiceScoreSum(diceResultsRed + diceResultsBlack);
+    await sleep(1000);
+    //Get the player game data
     playersData[turn].gameSessionData.prevScore = playersData[turn].gameSessionData.runningScore;
     const score = playersData[turn].gameSessionData.runningScore + diceResultsRed + diceResultsBlack;
     if (score > targetScore) {
@@ -163,30 +195,9 @@ const Game = ({ endRemoteGame }) => {
     if (diceResultsBlack + diceResultsRed === 12) {
       playersData[turn].gameSessionData.diamondEarned += 1;
     }
-
-    //Save the generated random number to Firebase
-    saveDiceResults(
-      {
-        red: diceResultsRed,
-        black: diceResultsBlack,
-      },
-      gameInvite.id
-    );
-
-    //Show dice animation for 1500 ms
-    setRDiceImg(globalVariables.red_dice_faces[0]);
-    setBDiceImg(globalVariables.black_dice_faces[0]);
-    await sleep(1500);
-    //show Dice results
-    setRDiceImg(globalVariables.red_dice_faces[diceResultsRed]);
-    setBDiceImg(globalVariables.black_dice_faces[diceResultsBlack]);
-    await sleep(1200);
-    //store the session data in Context
-    setDiceScoreSum(diceResultsRed + diceResultsBlack);
-    await sleep(1000);
-    //Store playersData into FB to show progressbar animation
-    savePlayerGameData(playersData[turn].gameSessionData, gameInvite.id);
-    //==== end of code
+    //Store playersData into FB to show progressbar animation to the remote player
+    savePlayerGameData(playersData[turn].gameSessionData, turn, gameInvite.id);
+    //====
     if (playersData[turn].gameSessionData.runningScore >= targetScore) {
       setIsGameOver(true);
       playersData[turn].gameSessionData.winner = true;
@@ -214,7 +225,7 @@ const Game = ({ endRemoteGame }) => {
     }
   };
 
-  const performRemotePlay = async (remoteDiceRes) => {
+  const performRemoteDiceAnim = async (remoteDiceRes) => {
     setGameMode(true);
     setRDiceImg(globalVariables.red_dice_faces[0]);
     setBDiceImg(globalVariables.black_dice_faces[0]);
@@ -228,6 +239,10 @@ const Game = ({ endRemoteGame }) => {
     await sleep(1000);
     setGameMode(false);
     setDiceScoreSum(0);
+  };
+
+  const performRemoteBarAnim = async (rpGameData, t) => {
+    playersData[t].gameSessionData = rpGameData;
   };
 
   //Handle Play Again

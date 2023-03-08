@@ -362,11 +362,11 @@ const saveDiceResults = async (diceRes, inviteId) => {
 };
 
 //Save player game data
-const savePlayerGameData = async (pGameData, inviteId) => {
+const savePlayerGameData = async (pGameData, turn, inviteId) => {
   const inviteRef = doc(ColRefInv, inviteId);
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
-    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: pGameData });
+    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: pGameData, turn: turn });
   }
 };
 
