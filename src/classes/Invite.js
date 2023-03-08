@@ -23,8 +23,9 @@ export class Invite {
       room: this.room,
       created_at: this.created_at,
     });
-    await setDoc(doc(ColRefInv, this.id, "gameSessionData", "playerTurn"), { whoseTurn: null });
+    await setDoc(doc(ColRefInv, this.id, "gameSessionData", "playerTurn"), { whoseTurn: this.invitedBy });
     await setDoc(doc(ColRefInv, this.id, "gameSessionData", "remoteDiceRes"), { remoteDiceRes: null });
+    await setDoc(doc(ColRefInv, this.id, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: null });
     await updateDoc(doc(colRefP, auth.currentUser.uid), {
       "privateData.inviteId": this.id,
       "privateData.joiningCode": joiningCode,

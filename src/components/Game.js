@@ -10,7 +10,7 @@ import GameProgressBox from "../components/GameProgressBox";
 import PlayerAvatar from "../components/PlayerAvatar";
 import Gameover from "../components/Gameover";
 import { useNavigate } from "react-router-dom";
-import { ColRefInv, saveData, saveDiceResults, updatePlayerTurn } from "../firebase";
+import { ColRefInv, saveData, saveDiceResults, savePlayerGameData, updatePlayerTurn } from "../firebase";
 import { useRef } from "react";
 import LocalStorageContext from "../store/localStorage-context";
 import AppContext from "../store/app-context";
@@ -37,34 +37,24 @@ const Game = ({ endRemoteGame }) => {
   const [autoRoll, setAutoRoll] = useState(false);
   const switchState = useRef();
   const appDataCtx = useContext(AppContext);
-  const [isFirstRun, setIsFirstRun] = useState(true);
+
   // const [searchParams] = useSearchParams();
 
   const gameInvite = appDataCtx.appData.get("joinedInvite");
   const targetScore = gameInvite.targetScore;
   const localUser = localStorageCtx.getData("raceto100AppData", "localUser");
 
-  useEffect(() => {
-    if (isFirstRun) {
-      setIsFirstRun(false);
-      return;
-    }
-    console.log("Current Turn: ", turn);
-  }, [turn]);
-
   //Setup Firebase listener to the invite
   useEffect(() => {
+    //Listen to turn changes
     const unsub_listner4 = onSnapshot(
-      doc(ColRefInv, gameInvite.id),
+      doc(ColRefInv, gameInvite.id, "gameSessionData", "playerTurn"),
       (doc) => {
-        // const turnIndex = _.findIndex(doc.data().room, { data: { name: doc.data().whoseTurn } });
-        // setTurn(turnIndex);
-        // if (doc.data().whoseTurn === localUser.name) {
-        //   setRollBtnState(false);
-        // }
-        // else {
-        //   performRemotePlay(doc.data().remoteDiceRes);
-        // }
+        const turnIndex = _.findIndex(gameInvite.room, { data: { name: doc.data().whoseTurn } });
+        setTurn(turnIndex);
+        if (doc.data().whoseTurn === localUser.name) {
+          setRollBtnState(false);
+        }
       },
       (error) => {
         console.error("There was an error in getting the invite data:", error.message);
@@ -72,7 +62,22 @@ const Game = ({ endRemoteGame }) => {
       }
     );
 
-    return () => unsub_listner4();
+    ////Listen to dice results for remote players
+    const unsub_listner5 = onSnapshot(
+      doc(ColRefInv, gameInvite.id, "gameSessionData", "remoteDiceRes"),
+      (doc) => {
+        doc.data().remoteDiceRes && performRemotePlay(doc.data().remoteDiceRes);
+      },
+      (error) => {
+        console.error("There was an error in getting the invite data:", error.message);
+        endRemoteGame();
+      }
+    );
+
+    return () => {
+      unsub_listner5();
+      unsub_listner4();
+    };
   }, []);
 
   //Get the players
@@ -139,21 +144,9 @@ const Game = ({ endRemoteGame }) => {
     setGameMode(true);
     //set player roll btn disabled
     setRollBtnState(true);
-    //Show dice animation for 1500 ms
-    setRDiceImg(globalVariables.red_dice_faces[0]);
-    setBDiceImg(globalVariables.black_dice_faces[0]);
-    await sleep(1500);
     //Get the random dice number
     const diceResultsRed = Math.floor(Math.random() * 6 + 1);
     const diceResultsBlack = Math.floor(Math.random() * 6 + 1);
-    //Save the generated random number to Firebase
-    // saveDiceResults(
-    //   {
-    //     red: diceResultsRed,
-    //     black: diceResultsBlack,
-    //   },
-    //   gameInvite.id
-    // );
     //Store scores in memory
     playersData[turn].gameSessionData.prevScore = playersData[turn].gameSessionData.runningScore;
     const score = playersData[turn].gameSessionData.runningScore + diceResultsRed + diceResultsBlack;
@@ -170,6 +163,20 @@ const Game = ({ endRemoteGame }) => {
     if (diceResultsBlack + diceResultsRed === 12) {
       playersData[turn].gameSessionData.diamondEarned += 1;
     }
+
+    //Save the generated random number to Firebase
+    saveDiceResults(
+      {
+        red: diceResultsRed,
+        black: diceResultsBlack,
+      },
+      gameInvite.id
+    );
+
+    //Show dice animation for 1500 ms
+    setRDiceImg(globalVariables.red_dice_faces[0]);
+    setBDiceImg(globalVariables.black_dice_faces[0]);
+    await sleep(1500);
     //show Dice results
     setRDiceImg(globalVariables.red_dice_faces[diceResultsRed]);
     setBDiceImg(globalVariables.black_dice_faces[diceResultsBlack]);
@@ -177,6 +184,9 @@ const Game = ({ endRemoteGame }) => {
     //store the session data in Context
     setDiceScoreSum(diceResultsRed + diceResultsBlack);
     await sleep(1000);
+    //Store playersData into FB to show progressbar animation
+    savePlayerGameData(playersData[turn].gameSessionData, gameInvite.id);
+    //==== end of code
     if (playersData[turn].gameSessionData.runningScore >= targetScore) {
       setIsGameOver(true);
       playersData[turn].gameSessionData.winner = true;
@@ -204,18 +214,21 @@ const Game = ({ endRemoteGame }) => {
     }
   };
 
-  // const performRemotePlay = async (remoteDiceRes) => {
-  //   setRDiceImg(globalVariables.red_dice_faces[0]);
-  //   setBDiceImg(globalVariables.black_dice_faces[0]);
-  //   await sleep(1500);
-  //   //show Dice results
-  //   setRDiceImg(globalVariables.red_dice_faces[remoteDiceRes.red]);
-  //   setBDiceImg(globalVariables.black_dice_faces[remoteDiceRes.black]);
-  //   await sleep(1200);
-  //   //store the session data in Context
-  //   setDiceScoreSum(remoteDiceRes.red + remoteDiceRes.black);
-  //   await sleep(1000);
-  // };
+  const performRemotePlay = async (remoteDiceRes) => {
+    setGameMode(true);
+    setRDiceImg(globalVariables.red_dice_faces[0]);
+    setBDiceImg(globalVariables.black_dice_faces[0]);
+    await sleep(1500);
+    //show Dice results
+    setRDiceImg(globalVariables.red_dice_faces[remoteDiceRes.red]);
+    setBDiceImg(globalVariables.black_dice_faces[remoteDiceRes.black]);
+    await sleep(1200);
+    //store the session data in Context
+    setDiceScoreSum(remoteDiceRes.red + remoteDiceRes.black);
+    await sleep(1000);
+    setGameMode(false);
+    setDiceScoreSum(0);
+  };
 
   //Handle Play Again
   const playAgainHandler = () => {

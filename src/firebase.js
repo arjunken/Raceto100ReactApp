@@ -293,7 +293,10 @@ export const deleteUsersData = async (name) => {
 //Delete the invite
 const deleteMyInvite = async (inviteDocId) => {
   //Delete all the documents in the subcollection gameSessionData
-
+  const colSnapshot = await getDocs(collection(db, "invites", inviteDocId, "gameSessionData"));
+  colSnapshot.forEach((thisDoc) => {
+    deleteDoc(doc(db, "invites", inviteDocId, "gameSessionData", thisDoc.id));
+  });
   deleteDoc(doc(db, "invites", inviteDocId));
   await updateDoc(doc(colRefP, auth.currentUser.uid), { "privateData.inviteId": null, "privateData.joiningCode": null });
 };
@@ -354,7 +357,16 @@ const saveDiceResults = async (diceRes, inviteId) => {
   const inviteRef = doc(ColRefInv, inviteId);
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
-    await updateDoc(doc(ColRefInv, inviteId), { remoteDiceRes: diceRes });
+    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remoteDiceRes"), { remoteDiceRes: diceRes });
+  }
+};
+
+//Save player game data
+const savePlayerGameData = async (pGameData, inviteId) => {
+  const inviteRef = doc(ColRefInv, inviteId);
+  const inviteSnap = await getDoc(inviteRef);
+  if (inviteSnap.exists()) {
+    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: pGameData });
   }
 };
 
@@ -372,4 +384,5 @@ export {
   updateGameInSession,
   updatePlayerTurn,
   saveDiceResults,
+  savePlayerGameData,
 };

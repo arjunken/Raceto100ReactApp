@@ -101,13 +101,18 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
               if (change.doc.data().room.length > myGameInviteJoiners) {
                 displaySBAlert({ ...openSBAlert, newJoin: true });
                 setLastPlayerJoined(change.doc.data().room[1]);
-                appDataCtx.setData("joinedInvite", change.doc.data());
               } else {
                 displaySBAlert({ ...openSBAlert, dropJoin: true });
               }
               setMyGameInvite(change.doc.data());
               setMyGameInviteJoiners(change.doc.data().room.length);
             }
+
+            //Store the invite in local user context
+            if (change.doc.data().room.length > myGameInviteJoiners) {
+              appDataCtx.setData("joinedInvite", change.doc.data());
+            }
+
             //Listen to the invite changes that the player joined
             if (change.doc.data().room.length > 1 && change.doc.data().room[1].data.name === player.data.name) {
               if (change.doc.data().isGameInSession) {
@@ -277,7 +282,6 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
     addPlayerToGameRoom(invite, player)
       .then(() => {
         console.log("Successfully joined an invite");
-        appDataCtx.setData("joinedInvite", invite);
       })
       .catch((ex) => {
         console.error("Error joining an invite:", ex.message);
