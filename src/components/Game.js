@@ -10,7 +10,7 @@ import GameProgressBox from "../components/GameProgressBox";
 import PlayerAvatar from "../components/PlayerAvatar";
 import Gameover from "../components/Gameover";
 import { useNavigate } from "react-router-dom";
-import { ColRefInv, saveData, saveDiceResults, savePlayerGameData, updatePlayerTurn } from "../firebase";
+import { ColRefInv, saveData, saveDiceResults, savePlayerGameData, saveRemoteGameData, updatePlayerTurn } from "../firebase";
 import { useRef } from "react";
 import LocalStorageContext from "../store/localStorage-context";
 import AppContext from "../store/app-context";
@@ -243,6 +243,15 @@ const Game = ({ endRemoteGame }) => {
 
   const performRemoteBarAnim = async (rpGameData, t) => {
     playersData[t].gameSessionData = rpGameData;
+    if (playersData[t].gameSessionData.runningScore >= targetScore) {
+      playersData[t].gameSessionData.winner = true;
+      playerCtx.players = playersData;
+      setWinner({
+        name: playersData[t].data.name,
+        index: t,
+      });
+      setIsGameOver(true);
+    }
   };
 
   //Handle Play Again
@@ -274,10 +283,8 @@ const Game = ({ endRemoteGame }) => {
   if (isGameOver) {
     //Save Game Data to Firebase
     const uid = localStorageCtx.getData("raceto100AppData", "auth");
-    // const uid = searchParams.get("uid");
-    if (uid) {
-      saveData(uid, playersData, winner);
-    }
+    const turnIndex = _.findIndex(gameInvite.room, { data: { name: localUser.name } });
+    uid && saveRemoteGameData(uid, playersData, turnIndex, winner);
 
     return (
       <Box sx={{ textAlign: "center" }}>

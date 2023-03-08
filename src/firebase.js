@@ -113,12 +113,24 @@ export const saveData = async (uid, playersData, winner) => {
     "playerData.diamond": increment(playersData[0].gameSessionData.diamondEarned),
     "playerData.totalScore": increment(playersData[0].gameSessionData.runningScore),
   });
-  await updateDoc(doc(colRefP, uid, "collections", "robodata"), {
+
+  await updateDoc(doc(colRefP, uid), {
     "roboData.gamesPlayed": increment(1),
     "roboData.gamesWon": winner.index === "1" ? increment(1) : increment(0),
     "roboData.gold": increment(playersData[1].gameSessionData.goldEarned),
     "roboData.diamond": increment(playersData[1].gameSessionData.diamondEarned),
     "roboData.totalScore": increment(playersData[1].gameSessionData.runningScore),
+  });
+};
+
+//Save remote game data after Game is over
+export const saveRemoteGameData = async (uid, playersData, turn, winner) => {
+  await updateDoc(doc(colRefP, uid), {
+    "playerData.gamesPlayed": increment(1),
+    "playerData.gamesWon": winner.index === turn ? increment(1) : increment(0),
+    "playerData.gold": increment(playersData[turn].gameSessionData.goldEarned),
+    "playerData.diamond": increment(playersData[turn].gameSessionData.diamondEarned),
+    "playerData.totalScore": increment(playersData[turn].gameSessionData.runningScore),
   });
 };
 
