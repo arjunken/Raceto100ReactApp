@@ -171,7 +171,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
           const inviteId = nanoid(20);
           const joiningCode = nanoid(6);
           setPlayInProgress(true);
-          const invite = new Invite(inviteId, player, targetScore);
+          const invite = new Invite(inviteId, player, targetScore.target);
           invite
             .publish(joiningCode)
             .then(() => {
