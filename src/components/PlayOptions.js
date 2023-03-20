@@ -6,7 +6,7 @@ const PlayOptions = (props) => {
   const localStorageCtx = useContext(LocalStorageContext);
   const [targetScore, setTargetScore] = useState(localStorageCtx.getData("raceto100Target", "target"));
   const handleTargetScore = (e) => {
-    localStorageCtx.setData("raceto100Target", "taregt", e.target.value);
+    localStorageCtx.setData("raceto100Target", "target", e.target.value);
     setTargetScore(e.target.value);
   };
   return (

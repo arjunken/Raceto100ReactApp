@@ -3,6 +3,7 @@ import { createContext } from "react";
 const LocalStorageContext = createContext({
   setData: (locationKey, key, value) => {},
   getData: (locationKey, key) => {},
+  getAllData: (locationKey) => {},
   removeData: (locationKey, key) => {},
   clearData: (locationKey) => {},
 });
@@ -25,6 +26,13 @@ const LocalStorageContextProvider = (props) => {
     }
   };
 
+  const getAllDataHandler = (locationKey) => {
+    const data = JSON.parse(localStorage.getItem(locationKey));
+    if (data) {
+      return data;
+    }
+  };
+
   const removeDataHandler = (locationKey, key) => {
     const data = JSON.parse(localStorage.getItem(locationKey));
     if (data) {
@@ -40,6 +48,7 @@ const LocalStorageContextProvider = (props) => {
   const context = {
     setData: setDataHandler,
     getData: getDataHandler,
+    getAllData: getAllDataHandler,
     removeData: removeDataHandler,
     clearData: clearDataHandler,
   };

@@ -40,7 +40,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
   const [lastInviteRemoved, setLastInviteRemoved] = useState(null);
   const [gameInSession, setGameInSession] = useState(false);
   const swalert = withReactContent(Swal);
-  const targetScore = localStorage.getItem("raceto100Target");
+  const targetScore = localStorageCtx.getData("raceto100Target", "target");
   const [openSBAlert, setOpenSBAlert] = useState({
     myInviteExpiry: false,
     newJoin: false,
@@ -171,7 +171,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
           const inviteId = nanoid(20);
           const joiningCode = nanoid(6);
           setPlayInProgress(true);
-          const invite = new Invite(inviteId, player, targetScore.target);
+          const invite = new Invite(inviteId, player, targetScore);
           invite
             .publish(joiningCode)
             .then(() => {

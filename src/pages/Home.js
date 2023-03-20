@@ -13,6 +13,8 @@ import { default_nonRegistered_gameMode, globalVariables } from "../globalVariab
 import { testUsername } from "../utils";
 import Navigation from "../components/Navigation";
 import PlayOptions from "../components/PlayOptions";
+import _ from "lodash";
+import LocalStorageContext from "../store/localStorage-context";
 
 const Home = () => {
   const [mode, setMode] = useState(default_nonRegistered_gameMode);
@@ -24,6 +26,7 @@ const Home = () => {
   const [showGameOptions, setShowGameOptions] = useState(false);
   const [avatarSelected, setAvatarSelected] = useState(0);
   const swalert = withReactContent(Swal);
+  const localStorageCtx = useContext(LocalStorageContext);
 
   const handleGameModeSelection = (e, newmode) => {
     setMode(e.target.value);
@@ -66,12 +69,13 @@ const Home = () => {
       //Flushout previously stored sessions in the context store
       playerCtx.resetPlayers();
       //add player into the context store
-      playerCtx.addPlayer(player1);
+      playerCtx.addPlayer(_.pick(player1, ["data.name", "data.avatarUrl", "gameSessionData"]));
       //Get the second player
       const player2 = new Player(globalVariables.ROBOT_SHORTNAME);
       player2.data.avatarUrl = "/avatars/shakuni.jpeg";
       //add the second player into the context store
-      playerCtx.addPlayer(player2);
+      playerCtx.addPlayer(_.pick(player2, ["data.name", "data.avatarUrl", "gameSessionData"]));
+      localStorageCtx.clearData("raceto100LocalGame");
       navigate("/gamerobo");
     } else {
       // console.log("Remote playing is coming soon!");

@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from "react";
 import Chance from "chance";
 //App level imports
 import PlayersContext from "../store/players-context";
-import { globalVariables } from "../globalVariables";
+import { globalVariables, inviteMaxJoins as numberOfPlayers } from "../globalVariables";
 import GameScoreDisplay from "../components/GameScoreDisplay";
 import DiceAnimation from "../components/DiceAnimation";
 import GameProgressBox from "../components/GameProgressBox";
@@ -37,6 +37,7 @@ const Game = ({ endRemoteGame }) => {
   const [autoRoll, setAutoRoll] = useState(false);
   const switchState = useRef();
   const appDataCtx = useContext(AppContext);
+  const [playersDataInSession, setPlayersDataInSession] = useState(localStorageCtx.getData("raceto100LocalGame", "playersDataInSession"));
 
   // const [searchParams] = useSearchParams();
 
@@ -93,29 +94,41 @@ const Game = ({ endRemoteGame }) => {
     };
   }, []);
 
-  //Get the players
-  const playersData = playerCtx.players;
-  const numberOfPlayers = playersData.length;
-
-  //Handle browser tab close by user
+  //Get the players data
   const handleTabClose = (event) => {
     event.preventDefault();
     event.returnValue = "";
   };
 
+  const handleBrowserTabClose = async () => {
+    if (playerCtx.players[0] !== null && playerCtx.players[1] !== null) {
+      localStorageCtx.setData("raceto100LocalGame", "playersDataInSession", [playersData[0], playersData[1]]);
+    }
+    if (Object.keys(winner).length > 0) {
+      localStorageCtx.setData("raceto100LocalGame", "gameWinner", winner);
+    }
+  };
+
   useEffect(() => {
     window.addEventListener("beforeunload", handleTabClose);
+    //handle things if user decides to close the tab
+    window.addEventListener("unload", handleBrowserTabClose);
     // cleanup this component
+    //Set Gameover if runningScore reaches TargetScore
+    if (Math.max(playersData[0].gameSessionData.runningScore, playersData[1].gameSessionData.runningScore) >= targetScore) {
+      setIsGameOver(true);
+    }
     return () => {
       window.removeEventListener("beforeunload", handleTabClose);
+      window.removeEventListener("unload", handleBrowserTabClose);
     };
   }, []);
 
-  if (playerCtx.players.length) {
-  } else if (sessionStorage.getItem("raceto100PlayersData")) {
-    playersData = JSON.parse(sessionStorage.getItem("raceto100PlayersData"));
-    numberOfPlayers = playersData.length;
-    //Check if the game is already over
+  let playersData = [];
+  if (playersDataInSession) {
+    playersData = playersDataInSession;
+  } else if (playerCtx.players.length > 1) {
+    playersData = [playerCtx.players[0], playerCtx.players[1]];
   } else {
     return (
       <>

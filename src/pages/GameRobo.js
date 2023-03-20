@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from "react";
 import Chance from "chance";
 //App level imports
 import PlayersContext from "../store/players-context";
-import { globalVariables } from "../globalVariables";
+import { globalVariables, inviteMaxJoins as numberOfPlayers } from "../globalVariables";
 import GameScoreDisplay from "../components/GameScoreDisplay";
 import DiceAnimation from "../components/DiceAnimation";
 import GameProgressBox from "../components/GameProgressBox";
@@ -29,36 +29,49 @@ const GameRobo = () => {
   const [gameMode, setGameMode] = useState(false);
   const [diceScoreSum, setDiceScoreSum] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
-  const [winner, setWinner] = useState({});
+  const [winner, setWinner] = useState(localStorageCtx.getData("raceto100LocalGame", "gameWinner"));
   const navigate = useNavigate();
   const targetScore = localStorageCtx.getData("raceto100Target", "target");
   const [autoRoll, setAutoRoll] = useState(false);
   const switchState = useRef();
+  const [playersDataInSession, setPlayersDataInSession] = useState(localStorageCtx.getData("raceto100LocalGame", "playersDataInSession"));
+  let gameEnded = false;
   // const [searchParams] = useSearchParams();
-
-  let playersData = [];
-  let numberOfPlayers = 0;
 
   const handleTabClose = (event) => {
     event.preventDefault();
     event.returnValue = "";
   };
 
+  const handleBrowserTabClose = async () => {
+    if (playerCtx.players[0] !== null && playerCtx.players[1] !== null) {
+      localStorageCtx.setData("raceto100LocalGame", "playersDataInSession", [playersData[0], playersData[1]]);
+    }
+    if (Object.keys(winner).length > 0) {
+      localStorageCtx.setData("raceto100LocalGame", "gameWinner", winner);
+    }
+  };
+
   useEffect(() => {
     window.addEventListener("beforeunload", handleTabClose);
+    //handle things if user decides to close the tab
+    window.addEventListener("unload", handleBrowserTabClose);
     // cleanup this component
+    //Set Gameover if runningScore reaches TargetScore
+    if (Math.max(playersData[0].gameSessionData.runningScore, playersData[1].gameSessionData.runningScore) >= targetScore) {
+      setIsGameOver(true);
+    }
     return () => {
       window.removeEventListener("beforeunload", handleTabClose);
+      window.removeEventListener("unload", handleBrowserTabClose);
     };
   }, []);
 
-  if (playerCtx.players.length) {
-    playersData = playerCtx.players;
-    numberOfPlayers = playersData.length;
-  } else if (sessionStorage.getItem("raceto100PlayersData")) {
-    playersData = JSON.parse(sessionStorage.getItem("raceto100PlayersData"));
-    numberOfPlayers = playersData.length;
-    //Check if the game is already over
+  let playersData = [];
+  if (playersDataInSession) {
+    playersData = playersDataInSession;
+  } else if (playerCtx.players.length > 1) {
+    playersData = [playerCtx.players[0], playerCtx.players[1]];
   } else {
     return (
       <>
@@ -132,7 +145,7 @@ const GameRobo = () => {
       //save players data to local storage
       setRDiceImg(globalVariables.red_dice_faces[diceResultsRed]);
       setBDiceImg(globalVariables.black_dice_faces[diceResultsBlack]);
-      sessionStorage.setItem("raceto100PlayersData", JSON.stringify(playersData));
+      setPlayersDataInSession(playersData);
       // sessionStorage.setItem("raceto100SavedTurn", i);
       await sleep(1200);
       //store the session data in Context
@@ -148,7 +161,7 @@ const GameRobo = () => {
           index: i,
         });
         //Reset session storage
-        sessionStorage.removeItem("raceto100PlayersData");
+        setPlayersDataInSession(playersData);
         return;
       }
       i++;
@@ -172,8 +185,8 @@ const GameRobo = () => {
       playersData[i].gameSessionData.runningScore = 0;
       playersData[i].gameSessionData.goldEarned = 0;
       playersData[i].gameSessionData.diamondEarned = 0;
-      sessionStorage.setItem("raceto100PlayersData", JSON.stringify(playersData));
       playerCtx.players = playersData;
+      setPlayersDataInSession(playersData);
     }
 
     //reset gameover
@@ -186,6 +199,7 @@ const GameRobo = () => {
     setDiceScoreSum(0);
     setIsGameOver(false);
     setWinner({});
+    localStorageCtx.clearData("raceto100LocalGame");
   };
 
   //Function to save data to the Firebase
@@ -197,6 +211,9 @@ const GameRobo = () => {
     if (uid) {
       saveData(uid, playersData, winner);
     }
+    //Store Data locally
+    localStorageCtx.setData("raceto100LocalGame", "playersDataInSession", [playersDataInSession[0], playersDataInSession[1]]);
+    localStorageCtx.setData("raceto100LocalGame", "gameWinner", winner);
 
     return (
       <Box sx={{ textAlign: "center" }}>
