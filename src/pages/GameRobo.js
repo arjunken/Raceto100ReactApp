@@ -104,7 +104,7 @@ const GameRobo = () => {
     setGameMode(false);
     setDiceScoreSum(0);
     setIsGameOver(false);
-    setWinner({});
+    setWinner(null);
     navigate("/");
   };
 
@@ -160,7 +160,6 @@ const GameRobo = () => {
           name: playersData[i].data.name,
           index: i,
         });
-        //Reset session storage
         setPlayersDataInSession(playersData);
         return;
       }
@@ -198,7 +197,7 @@ const GameRobo = () => {
     setGameMode(false);
     setDiceScoreSum(0);
     setIsGameOver(false);
-    setWinner({});
+    setWinner(null);
     localStorageCtx.clearData("raceto100LocalGame");
   };
 

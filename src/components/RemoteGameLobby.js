@@ -23,6 +23,7 @@ import {
 import { doc, onSnapshot } from "@firebase/firestore";
 import LocalStorageContext from "../store/localStorage-context";
 import AppContext from "../store/app-context";
+import JoinedInviteCard from "./JoinedInviteCard";
 
 const RemoteGameLobby = ({ startRemoteGame }) => {
   const playerCtx = useContext(PlayersContext);
@@ -356,14 +357,18 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
         </Typography>
         {myGameInvite ? (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
-            <InviteCard
-              key={myGameInvite.id}
-              invite={myGameInvite}
-              joiners={myGameInviteJoiners}
-              joiningCode={"fds4342"}
-              initiateMyRemoteGame={() => initiateMyRemoteGameHandler(myGameInvite.id)}
-              expiryHandlerSelf={() => myGameInviteExpiryHandler(myGameInvite.id)}
-            />
+            {myGameInviteJoiners > 1 ? (
+              <JoinedInviteCard invite={myGameInvite} initiateMyRemoteGame={() => initiateMyRemoteGameHandler(myGameInvite.id)} />
+            ) : (
+              <InviteCard
+                key={myGameInvite.id}
+                invite={myGameInvite}
+                joiners={myGameInviteJoiners}
+                joiningCode={"fds4342"}
+                initiateMyRemoteGame={() => initiateMyRemoteGameHandler(myGameInvite.id)}
+                expiryHandlerSelf={() => myGameInviteExpiryHandler(myGameInvite.id)}
+              />
+            )}
           </Box>
         ) : (
           <Alert severity="info" sx={{ mx: "auto" }}>
@@ -383,17 +388,21 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
             {privateInvites.map((invite) => {
               if (invite.invitedBy !== currentUserData.playerData.name) {
-                return (
-                  <InviteCard
-                    key={invite.id}
-                    invite={invite}
-                    roomSize={invite.room.length}
-                    maxJoins={invite.maxJoins}
-                    myGameInvite={myGameInvite}
-                    expiryHandlerOthers={() => privateInvitesExpiryHandler(invite.id)}
-                    joinInviteHandler={() => joinInviteHandler(invite)}
-                  />
-                );
+                if (invite.room.length > 1) {
+                  return <JoinedInviteCard invite={invite} />;
+                } else {
+                  return (
+                    <InviteCard
+                      key={invite.id}
+                      invite={invite}
+                      roomSize={invite.room.length}
+                      maxJoins={invite.maxJoins}
+                      myGameInvite={myGameInvite}
+                      expiryHandlerOthers={() => privateInvitesExpiryHandler(invite.id)}
+                      joinInviteHandler={() => joinInviteHandler(invite)}
+                    />
+                  );
+                }
               }
             })}
           </Box>

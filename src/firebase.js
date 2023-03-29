@@ -379,6 +379,22 @@ const savePlayerGameData = async (pGameData, turn, inviteId) => {
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
     await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: pGameData, turn: turn });
+    if (pGameData.winner) {
+      turn === 0 && updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { player1Wins: increment(1) });
+      turn === 1 && updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { player2Wins: increment(1) });
+      await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: null, turn: 0 });
+      await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remoteDiceRes"), { remoteDiceRes: null });
+      await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playerTurn"), { whoseTurn: inviteSnap.data().room[0].data.name });
+    }
+  }
+};
+
+//Update play again flag for an invite
+const updateInvitePlayAgainRequest = async (flag, pname, inviteId) => {
+  const inviteRef = doc(ColRefInv, inviteId);
+  const inviteSnap = await getDoc(inviteRef);
+  if (inviteSnap.exists()) {
+    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playAgainRequested"), { playAgainRequested: flag, requester: pname });
   }
 };
 
@@ -397,4 +413,5 @@ export {
   updatePlayerTurn,
   saveDiceResults,
   savePlayerGameData,
+  updateInvitePlayAgainRequest,
 };

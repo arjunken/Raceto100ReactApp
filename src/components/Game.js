@@ -10,12 +10,22 @@ import GameProgressBox from "../components/GameProgressBox";
 import PlayerAvatar from "../components/PlayerAvatar";
 import Gameover from "../components/Gameover";
 import { useNavigate } from "react-router-dom";
-import { ColRefInv, saveData, saveDiceResults, savePlayerGameData, saveRemoteGameData, updatePlayerTurn } from "../firebase";
+import {
+  ColRefInv,
+  saveData,
+  saveDiceResults,
+  savePlayerGameData,
+  saveRemoteGameData,
+  updateInvitePlayAgainRequest,
+  updatePlayerTurn,
+} from "../firebase";
 import { useRef } from "react";
 import LocalStorageContext from "../store/localStorage-context";
 import AppContext from "../store/app-context";
 import { doc, onSnapshot, query, where } from "firebase/firestore";
 import _ from "lodash";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 
 const chance = new Chance();
 const passiveDice = globalVariables.default_dice[0];
@@ -32,12 +42,12 @@ const Game = ({ endRemoteGame }) => {
   const [gameMode, setGameMode] = useState(false);
   const [diceScoreSum, setDiceScoreSum] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
-  const [winner, setWinner] = useState({});
+  const [winner, setWinner] = useState(null);
   const navigate = useNavigate();
   const [autoRoll, setAutoRoll] = useState(false);
   const switchState = useRef();
   const appDataCtx = useContext(AppContext);
-  const [playersDataInSession, setPlayersDataInSession] = useState(localStorageCtx.getData("raceto100LocalGame", "playersDataInSession"));
+  const swalert = withReactContent(Swal);
 
   // const [searchParams] = useSearchParams();
 
@@ -87,7 +97,58 @@ const Game = ({ endRemoteGame }) => {
       }
     );
 
+    ///Listen to play again requests
+    const unsub_listner7 = onSnapshot(
+      doc(ColRefInv, gameInvite.id, "gameSessionData", "playAgainRequested"),
+      (doc) => {
+        if (doc.data().playAgainRequested && doc.data().requester && doc.data().requester !== localUser.name) {
+          Swal.fire({
+            title: "One More Game?",
+            text: "Hey! do you want to play one more game?",
+            iconHtml: '<img src="/images/invite.png" />',
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Ya, Sure!",
+            cancelButtonText: "No, Quit",
+            customClass: {
+              icon: "no-border",
+            },
+          }).then((result) => {
+            if (result.isConfirmed) {
+              console.log("Game will start");
+            }
+            if (result.isDismissed) {
+              updateInvitePlayAgainRequest(false, localUser.name, gameInvite.id);
+            }
+          });
+        }
+        //Notify play again requester if other player rejects
+        if (!doc.data().playAgainRequested && doc.data().requester && doc.data().requester !== localUser.name) {
+          Swal.fire({
+            title: "Player Quits!",
+            text: "Sorry pal. Maybe next time. Got to go!",
+            iconHtml: '<img src="/images/invite.png" />',
+            showCancelButton: false,
+            confirmButtonColor: "#d33",
+            confirmButtonText: "Quit",
+            customClass: {
+              icon: "no-border",
+            },
+          }).then((result) => {
+            if (result.isConfirmed) {
+              console.log("Game will end!");
+            }
+          });
+        }
+      },
+      (error) => {
+        console.error("There was an error in checking if play again requested:", error.message);
+      }
+    );
+
     return () => {
+      unsub_listner7();
       unsub_listner6();
       unsub_listner5();
       unsub_listner4();
@@ -102,10 +163,7 @@ const Game = ({ endRemoteGame }) => {
 
   const handleBrowserTabClose = async () => {
     if (playerCtx.players[0] !== null && playerCtx.players[1] !== null) {
-      localStorageCtx.setData("raceto100LocalGame", "playersDataInSession", [playersData[0], playersData[1]]);
-    }
-    if (Object.keys(winner).length > 0) {
-      localStorageCtx.setData("raceto100LocalGame", "gameWinner", winner);
+      console.log("Invite Data should be deleted");
     }
   };
 
@@ -114,10 +172,6 @@ const Game = ({ endRemoteGame }) => {
     //handle things if user decides to close the tab
     window.addEventListener("unload", handleBrowserTabClose);
     // cleanup this component
-    //Set Gameover if runningScore reaches TargetScore
-    if (Math.max(playersData[0].gameSessionData.runningScore, playersData[1].gameSessionData.runningScore) >= targetScore) {
-      setIsGameOver(true);
-    }
     return () => {
       window.removeEventListener("beforeunload", handleTabClose);
       window.removeEventListener("unload", handleBrowserTabClose);
@@ -125,9 +179,8 @@ const Game = ({ endRemoteGame }) => {
   }, []);
 
   let playersData = [];
-  if (playersDataInSession) {
-    playersData = playersDataInSession;
-  } else if (playerCtx.players.length > 1) {
+
+  if (playerCtx.players.length > 1) {
     playersData = [playerCtx.players[0], playerCtx.players[1]];
   } else {
     return (
@@ -160,8 +213,7 @@ const Game = ({ endRemoteGame }) => {
     setRollBtnState(false);
     setGameMode(false);
     setDiceScoreSum(0);
-    setIsGameOver(false);
-    setWinner({});
+    setWinner(null);
     endRemoteGame();
   };
 
@@ -208,11 +260,8 @@ const Game = ({ endRemoteGame }) => {
     if (diceResultsBlack + diceResultsRed === 12) {
       playersData[turn].gameSessionData.diamondEarned += 1;
     }
-    //Store playersData into FB to show progressbar animation to the remote player
-    savePlayerGameData(playersData[turn].gameSessionData, turn, gameInvite.id);
     //====
     if (playersData[turn].gameSessionData.runningScore >= targetScore) {
-      setIsGameOver(true);
       playersData[turn].gameSessionData.winner = true;
       //transfer data to data from local storage to context
       playerCtx.players = playersData;
@@ -220,8 +269,16 @@ const Game = ({ endRemoteGame }) => {
         name: playersData[turn].data.name,
         index: turn,
       });
+      //Store playersData into FB to show progressbar animation to the remote player
+      savePlayerGameData(playersData[turn].gameSessionData, turn, gameInvite.id);
+      await sleep(1200);
+      setIsGameOver(true);
+      setGameMode(false);
       return;
     }
+    //Store playersData into FB to show progressbar animation to the remote player
+    savePlayerGameData(playersData[turn].gameSessionData, turn, gameInvite.id);
+
     if (turn === numberOfPlayers - 1) {
       const autoRoll = switchState.current.firstChild.checked;
       autoRoll && setTurn(0);
@@ -229,8 +286,8 @@ const Game = ({ endRemoteGame }) => {
     if (turn < numberOfPlayers - 1) {
       //Change WhoseTurn in firebase
       updatePlayerTurn(turn + 1, gameInvite.id);
-      setDiceScoreSum(0);
       setGameMode(false);
+      setDiceScoreSum(0);
     } else {
       updatePlayerTurn(0, gameInvite.id);
       setGameMode(false);
@@ -249,7 +306,7 @@ const Game = ({ endRemoteGame }) => {
     await sleep(1200);
     //store the session data in Context
     setDiceScoreSum(remoteDiceRes.red + remoteDiceRes.black);
-    await sleep(1000);
+    await sleep(1200);
     setGameMode(false);
     setDiceScoreSum(0);
   };
@@ -263,6 +320,7 @@ const Game = ({ endRemoteGame }) => {
         name: playersData[t].data.name,
         index: t,
       });
+      await sleep(1000);
       setIsGameOver(true);
     }
   };
@@ -275,8 +333,16 @@ const Game = ({ endRemoteGame }) => {
       playersData[i].gameSessionData.runningScore = 0;
       playersData[i].gameSessionData.goldEarned = 0;
       playersData[i].gameSessionData.diamondEarned = 0;
+      playersData[i].gameSessionData.winner = null;
       sessionStorage.setItem("raceto100PlayersData", JSON.stringify(playersData));
       playerCtx.players = playersData;
+    }
+
+    //request other player to player again
+    updateInvitePlayAgainRequest(true, localUser.name, gameInvite.id);
+
+    if (gameInvite.invitedBy === localUser.name) {
+      setRollBtnState(false);
     }
 
     //reset gameover
@@ -284,11 +350,9 @@ const Game = ({ endRemoteGame }) => {
     setTurn(0);
     setRDiceImg(globalVariables.default_dice[1]);
     setBDiceImg(globalVariables.default_dice[1]);
-    setRollBtnState(false);
     setGameMode(false);
     setDiceScoreSum(0);
-    setIsGameOver(false);
-    setWinner({});
+    setWinner(null);
   };
 
   //Function to save data to the Firebase
@@ -389,7 +453,7 @@ const Game = ({ endRemoteGame }) => {
           fontFamily: "Bubblegum Sans",
         }}
       >
-        Roll
+        {rollBtnState ? <Typography sx={{ color: "#505050", fontSize: "3rem", fontFamily: "Bubblegum Sans" }}>Wait..</Typography> : "Roll"}
       </Button>
       <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ mt: 2 }}>
         <Typography color="white">Manual Roll</Typography>
