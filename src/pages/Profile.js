@@ -114,13 +114,6 @@ const Profile = () => {
       playerCtx.addPlayer(player2);
       navigate("/gamerobo");
     } else {
-      // swalert.fire("Coming up..", "Remote Player option is currently not supported. Check this option in the future.", "info");
-      const player = new Player(currentUserData.name);
-      player.data.avatarUrl = currentUserData.avatarUrl;
-      //Flushout previously stored sessions in the context store
-      playerCtx.resetPlayers();
-      //add player into the context store
-      playerCtx.addPlayer(player);
       //Send the player1 game server
       navigate("/remotegame");
     }

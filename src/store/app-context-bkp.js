@@ -1,25 +1,27 @@
 import { createContext, useState } from "react";
 
 const AppContext = createContext({
-  appData: {},
+  appData: new Map(),
   setData: (key, value) => {},
   removeData: (key) => {},
   clearData: () => {},
 });
 
 const AppContextProvider = (props) => {
-  const [appData, setAppData] = useState({});
+  const [appData, setAppData] = useState(new Map());
 
   const setDataHandler = (key, value) => {
-    setAppData((preEntries) => ({ ...preEntries, [key]: value }));
+    setAppData((curMap) => new Map(curMap).set(key, value));
   };
 
   const removeDataHandler = (key) => {
-    setAppData((preEntries) => delete preEntries[key]);
+    setAppData((curMap) => {
+      return new Map(curMap).delete(key);
+    });
   };
 
   const clearDataHandler = () => {
-    setAppData({});
+    setAppData((curMap) => new Map(curMap).clear());
   };
 
   const context = {

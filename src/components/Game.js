@@ -12,10 +12,13 @@ import Gameover from "../components/Gameover";
 import { useNavigate } from "react-router-dom";
 import {
   ColRefInv,
+  deleteMyInvite,
+  removePlayerFromGameRoom,
   saveData,
   saveDiceResults,
   savePlayerGameData,
   saveRemoteGameData,
+  updateInvitePlayAgainAccept,
   updateInvitePlayAgainRequest,
   updatePlayerTurn,
 } from "../firebase";
@@ -26,6 +29,7 @@ import { doc, onSnapshot, query, where } from "firebase/firestore";
 import _ from "lodash";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import PageLoading from "../layouts/PageLoading";
 
 const chance = new Chance();
 const passiveDice = globalVariables.default_dice[0];
@@ -48,10 +52,11 @@ const Game = ({ endRemoteGame }) => {
   const switchState = useRef();
   const appDataCtx = useContext(AppContext);
   const swalert = withReactContent(Swal);
+  const [showLoading, setShowLoading] = useState([false]);
 
   // const [searchParams] = useSearchParams();
 
-  const gameInvite = appDataCtx.appData.get("joinedInvite");
+  const gameInvite = appDataCtx.appData.joinedInvite;
   const targetScore = gameInvite.targetScore;
   const localUser = localStorageCtx.getData("raceto100AppData", "localUser");
 
@@ -116,15 +121,17 @@ const Game = ({ endRemoteGame }) => {
             },
           }).then((result) => {
             if (result.isConfirmed) {
-              console.log("Game will start");
+              updateInvitePlayAgainRequest({ playAgainRequested: false, playAgainAccepted: true }, gameInvite.id);
+              resumePlayAgain();
             }
             if (result.isDismissed) {
-              updateInvitePlayAgainRequest(false, localUser.name, gameInvite.id);
+              updateInvitePlayAgainRequest({ playAgainAccepted: false }, gameInvite.id);
+              quitBtnHandler();
             }
           });
         }
         //Notify play again requester if other player rejects
-        if (!doc.data().playAgainRequested && doc.data().requester && doc.data().requester !== localUser.name) {
+        if (doc.data().playAgainAccepted === false && doc.data().requester === localUser.name) {
           Swal.fire({
             title: "Player Quits!",
             text: "Sorry pal. Maybe next time. Got to go!",
@@ -137,9 +144,12 @@ const Game = ({ endRemoteGame }) => {
             },
           }).then((result) => {
             if (result.isConfirmed) {
-              console.log("Game will end!");
+              quitBtnHandler();
             }
           });
+        }
+        if (doc.data().playAgainAccepted) {
+          resumePlayAgain();
         }
       },
       (error) => {
@@ -205,6 +215,13 @@ const Game = ({ endRemoteGame }) => {
 
   //Handle Quit Btn
   const quitBtnHandler = () => {
+    removePlayerFromGameRoom(gameInvite.id, gameInvite.room[1])
+      .then(() => {
+        console.log("Successfully removed from the invite");
+      })
+      .catch((ex) => {
+        console.error("Error removing player from an invite:", ex.message);
+      });
     //reset game session
     setIsGameOver(false);
     setTurn(0);
@@ -327,6 +344,18 @@ const Game = ({ endRemoteGame }) => {
 
   //Handle Play Again
   const playAgainHandler = () => {
+    //request other player to player again
+    updateInvitePlayAgainRequest({ playAgainRequested: true, requester: localUser.name }, gameInvite.id);
+    Swal.fire(
+      "Request Sent!",
+      "We have sent a request to the remote player to join. If rejected, you will be notified. Stay in the game!",
+      "question"
+    );
+    // setShowLoading([true, "Please wait while the remote player start the game session..."]);
+  };
+
+  //Resume Play again once remote player accepts the request
+  const resumePlayAgain = () => {
     //cleanup game session data
     for (let i = 0; i < playersData.length; i++) {
       playersData[i].gameSessionData.prevScore = 0;
@@ -337,9 +366,6 @@ const Game = ({ endRemoteGame }) => {
       sessionStorage.setItem("raceto100PlayersData", JSON.stringify(playersData));
       playerCtx.players = playersData;
     }
-
-    //request other player to player again
-    updateInvitePlayAgainRequest(true, localUser.name, gameInvite.id);
 
     if (gameInvite.invitedBy === localUser.name) {
       setRollBtnState(false);
@@ -460,6 +486,7 @@ const Game = ({ endRemoteGame }) => {
         <Switch ref={switchState} onChange={switchHandler} size="large" />
         <Typography color="white">Auto Roll</Typography>
       </Stack>
+      {showLoading && <PageLoading showLoading={showLoading[0]} msg={showLoading[1]} actionBtn={showLoading[2]} />}
     </Box>
   );
 };

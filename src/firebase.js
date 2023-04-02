@@ -329,29 +329,33 @@ const getMyInvite = async (uid) => {
 };
 
 //add player to the rooom
-const addPlayerToGameRoom = async (invite, player) => {
-  const inviteRef = doc(ColRefInv, invite.id);
+const addPlayerToGameRoom = async (inviteId, player) => {
+  const inviteRef = doc(ColRefInv, inviteId);
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
-    await updateDoc(doc(ColRefInv, invite.id), { room: arrayUnion(player) });
+    await updateDoc(doc(ColRefInv, inviteId), { room: arrayUnion(player) });
   }
 };
 
 //remove player from the rooom
-const removePlayerFromGameRoom = async (invite, player) => {
-  const inviteRef = doc(ColRefInv, invite.id);
+const removePlayerFromGameRoom = async (inviteId, player) => {
+  const inviteRef = doc(ColRefInv, inviteId);
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
-    await updateDoc(doc(ColRefInv, invite.id), { room: arrayRemove(player) });
+    await updateDoc(doc(ColRefInv, inviteId), { isGameInSession: false, room: arrayRemove(player) });
+    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: null, turn: 0 });
+    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remoteDiceRes"), { remoteDiceRes: null });
+    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playerTurn"), { whoseTurn: inviteSnap.data().room[0].data.name });
+    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { player1Wins: 0, player2Wins: 0 });
   }
 };
 
 //Update Game in Session
-const updateGameInSession = async (inviteId) => {
+const updateGameInSession = async (inviteId, val) => {
   const inviteRef = doc(ColRefInv, inviteId);
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
-    await updateDoc(doc(ColRefInv, inviteId), { isGameInSession: true });
+    await updateDoc(doc(ColRefInv, inviteId), { isGameInSession: val });
   }
 };
 
@@ -390,11 +394,11 @@ const savePlayerGameData = async (pGameData, turn, inviteId) => {
 };
 
 //Update play again flag for an invite
-const updateInvitePlayAgainRequest = async (flag, pname, inviteId) => {
+const updateInvitePlayAgainRequest = async (data, inviteId) => {
   const inviteRef = doc(ColRefInv, inviteId);
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
-    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playAgainRequested"), { playAgainRequested: flag, requester: pname });
+    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playAgainRequested"), data);
   }
 };
 

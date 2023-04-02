@@ -24,13 +24,12 @@ import { doc, onSnapshot } from "@firebase/firestore";
 import LocalStorageContext from "../store/localStorage-context";
 import AppContext from "../store/app-context";
 import JoinedInviteCard from "./JoinedInviteCard";
+import { Player } from "../classes/Player";
 
 const RemoteGameLobby = ({ startRemoteGame }) => {
   const playerCtx = useContext(PlayersContext);
   const localStorageCtx = useContext(LocalStorageContext);
   const appDataCtx = useContext(AppContext);
-  const [currentUserData, setCurrentUserData] = useState(null);
-  const player = _.pick(playerCtx.players[0], ["data.name", "data.avatarUrl", "gameSessionData"]);
   const [myGameInvite, setMyGameInvite] = useState(null);
   const userId = localStorageCtx.getData("raceto100AppData", "auth");
   const [privateInvites, setPrivateInvites] = useState([]);
@@ -48,6 +47,10 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
     inviteCancelled: false,
     dropJoin: false,
   });
+  const localUser = localStorageCtx.getData("raceto100AppData", "localUser");
+  const playerObj = new Player(localUser.name);
+  playerObj.data.avatarUrl = localUser.avatarUrl;
+  const player = _.pick(playerObj, ["data.name", "data.avatarUrl", "gameSessionData"]);
   //Load current user's Invite Id if it is available
   // const myInviteDocId = localStorageCtx.appData.get("raceto100AppData","openInvite");
   //Load the current user's invite
@@ -67,17 +70,6 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
 
   //Run UseEffect for listening to the new invites from Firebase invites collection
   useEffect(() => {
-    const unsub_listner1 = onSnapshot(
-      doc(colRefP, userId),
-      (doc) => {
-        setCurrentUserData(doc.data());
-      },
-      (error) => {
-        console.error("There was an error in getting the current user data:", error.message);
-        setCurrentUserData(null);
-      }
-    );
-
     const unsub_listner2 = onSnapshot(
       ColRefInv,
       (snapshot) => {
@@ -86,7 +78,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
             setPrivateInvites((preInvites) => [...preInvites, change.doc.data()]);
           }
           if (change.type === "removed") {
-            const myroom = _.findIndex(change.doc.data().room, { data: { name: player.data.name } });
+            const myroom = _.findIndex(change.doc.data().room, { data: { name: localUser.name } });
             if (myroom > 0) {
               displaySBAlert({ ...openSBAlert, inviteCancelled: true });
             }
@@ -98,8 +90,8 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
           }
           if (change.type === "modified") {
             //Listen to own invite changes
-            if (change.doc.data().invitedBy === player.data.name) {
-              if (change.doc.data().room.length > myGameInviteJoiners) {
+            if (change.doc.data().invitedBy === localUser.name) {
+              if (change.doc.data().room.length > 1) {
                 displaySBAlert({ ...openSBAlert, newJoin: true });
                 setLastPlayerJoined(change.doc.data().room[1]);
               } else {
@@ -110,12 +102,18 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
             }
 
             //Store the invite in local user context
-            if (change.doc.data().room.length > myGameInviteJoiners) {
+            if (change.doc.data().room.length > 1) {
               appDataCtx.setData("joinedInvite", change.doc.data());
             }
 
+            if (change.doc.data().room.length < 2) {
+              appDataCtx.removeData("joinedInvite");
+              setPlayInProgress(false);
+              setMyGameInviteJoiners(1);
+            }
+
             //Listen to the invite changes that the player joined
-            if (change.doc.data().room.length > 1 && change.doc.data().room[1].data.name === player.data.name) {
+            if (change.doc.data().room.length > 1 && change.doc.data().invitedBy !== localUser.name) {
               if (change.doc.data().isGameInSession) {
                 initiateRemoteGameHandler(change.doc.data());
               }
@@ -139,13 +137,9 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
     );
 
     return () => {
-      unsub_listner1();
       unsub_listner2();
     };
   }, []);
-
-  // const exInviteId = currentUserDataCtx.currentUserData.privateData.inviteId[1];
-  // const exJoiningCode = currentUserDataCtx.currentUserData.privateData.joiningCode;
 
   //function to display alert
   const displaySBAlert = (msgObj) => {
@@ -280,7 +274,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
     console.log("Requesting server to join invitation...");
     setShowLoading([true, "Please wait while the remote player start the game session...", () => quitJoinWaitHandler(invite)]);
     setLastInviteRemoved(invite);
-    addPlayerToGameRoom(invite, player)
+    addPlayerToGameRoom(invite.id, player)
       .then(() => {
         console.log("Successfully joined an invite");
       })
@@ -292,7 +286,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
   //Handler for the button on pageloading - waiting for game to start
   const quitJoinWaitHandler = (invite) => {
     setShowLoading([false]);
-    removePlayerFromGameRoom(invite, player)
+    removePlayerFromGameRoom(invite.id, player)
       .then(() => {
         console.log("Successfully removed from the invite");
       })
@@ -303,8 +297,8 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
 
   //Handler for starting remote game invited by me
   const initiateMyRemoteGameHandler = (inviteId) => {
-    if (myGameInviteJoiners) {
-      updateGameInSession(inviteId)
+    if (myGameInviteJoiners > 1) {
+      updateGameInSession(inviteId, true)
         .then(() => {
           //Flushout previously stored sessions in the context store
           playerCtx.resetPlayers();
@@ -387,9 +381,9 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
             {privateInvites.map((invite) => {
-              if (invite.invitedBy !== currentUserData.playerData.name) {
+              if (invite.invitedBy !== localUser.name) {
                 if (invite.room.length > 1) {
-                  return <JoinedInviteCard invite={invite} />;
+                  return <JoinedInviteCard key={invite.id} invite={invite} />;
                 } else {
                   return (
                     <InviteCard
