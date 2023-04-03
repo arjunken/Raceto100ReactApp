@@ -26,12 +26,13 @@ export class Invite {
     await setDoc(doc(ColRefInv, this.id, "gameSessionData", "playerTurn"), { whoseTurn: this.invitedBy });
     await setDoc(doc(ColRefInv, this.id, "gameSessionData", "remoteDiceRes"), { remoteDiceRes: null });
     await setDoc(doc(ColRefInv, this.id, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: null, turn: 0 });
-    await setDoc(doc(ColRefInv, this.id, "gameSessionData", "standings"), { player1Wins: 0, player2Wins: 0 });
+    await setDoc(doc(ColRefInv, this.id, "gameSessionData", "standings"), { p1Wins: 0, p1RunningScore: 0, p2Wins: 0, p2RunningScore: 0 });
     await setDoc(doc(ColRefInv, this.id, "gameSessionData", "playAgainRequested"), {
       playAgainRequested: false,
       requester: null,
       playAgainAccepted: null,
     });
+    await setDoc(doc(ColRefInv, this.id, "gameSessionData", "playerQuits"), { playerQuits: false, playerName: null });
     await updateDoc(doc(colRefP, auth.currentUser.uid), {
       "privateData.inviteId": this.id,
       "privateData.joiningCode": joiningCode,

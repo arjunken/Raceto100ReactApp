@@ -346,7 +346,8 @@ const removePlayerFromGameRoom = async (inviteId, player) => {
     await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: null, turn: 0 });
     await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remoteDiceRes"), { remoteDiceRes: null });
     await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playerTurn"), { whoseTurn: inviteSnap.data().room[0].data.name });
-    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { player1Wins: 0, player2Wins: 0 });
+    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { p1Wins: 0, p2Wins: 0 });
+    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playerQuits"), { playerQuits: true, playerName: player.data.name });
   }
 };
 
@@ -383,9 +384,11 @@ const savePlayerGameData = async (pGameData, turn, inviteId) => {
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
     await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: pGameData, turn: turn });
+    turn === 0 && (await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { p1RunningScore: pGameData.runningScore }));
+    turn === 1 && (await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { p2RunningScore: pGameData.runningScore }));
     if (pGameData.winner) {
-      turn === 0 && updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { player1Wins: increment(1) });
-      turn === 1 && updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { player2Wins: increment(1) });
+      turn === 0 && (await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { p1Wins: increment(1) }));
+      turn === 1 && (await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { p2Wins: increment(1) }));
       await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: null, turn: 0 });
       await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remoteDiceRes"), { remoteDiceRes: null });
       await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playerTurn"), { whoseTurn: inviteSnap.data().room[0].data.name });
@@ -399,6 +402,15 @@ const updateInvitePlayAgainRequest = async (data, inviteId) => {
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
     await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playAgainRequested"), data);
+  }
+};
+
+//Update play again flag for an invite
+const updateInvitePlayerQuits = async (data, inviteId) => {
+  const inviteRef = doc(ColRefInv, inviteId);
+  const inviteSnap = await getDoc(inviteRef);
+  if (inviteSnap.exists()) {
+    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playerQuits"), data);
   }
 };
 
@@ -418,4 +430,5 @@ export {
   saveDiceResults,
   savePlayerGameData,
   updateInvitePlayAgainRequest,
+  updateInvitePlayerQuits,
 };

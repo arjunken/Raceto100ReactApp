@@ -20,6 +20,7 @@ import {
   saveRemoteGameData,
   updateInvitePlayAgainAccept,
   updateInvitePlayAgainRequest,
+  updateInvitePlayerQuits,
   updatePlayerTurn,
 } from "../firebase";
 import { useRef } from "react";
@@ -107,46 +108,50 @@ const Game = ({ endRemoteGame }) => {
       doc(ColRefInv, gameInvite.id, "gameSessionData", "playAgainRequested"),
       (doc) => {
         if (doc.data().playAgainRequested && doc.data().requester && doc.data().requester !== localUser.name) {
-          Swal.fire({
-            title: "One More Game?",
-            text: "Hey! do you want to play one more game?",
-            iconHtml: '<img src="/images/invite.png" />',
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Ya, Sure!",
-            cancelButtonText: "No, Quit",
-            customClass: {
-              icon: "no-border",
-            },
-          }).then((result) => {
-            if (result.isConfirmed) {
-              updateInvitePlayAgainRequest({ playAgainRequested: false, playAgainAccepted: true }, gameInvite.id);
-              resumePlayAgain();
-            }
-            if (result.isDismissed) {
-              updateInvitePlayAgainRequest({ playAgainAccepted: false }, gameInvite.id);
-              quitBtnHandler();
-            }
-          });
+          swalert
+            .fire({
+              title: "One More Game?",
+              text: "Hey! do you want to play one more game?",
+              iconHtml: '<img src="/images/invite.png" />',
+              showCancelButton: true,
+              confirmButtonColor: "#3085d6",
+              cancelButtonColor: "#d33",
+              confirmButtonText: "Ya, Sure!",
+              cancelButtonText: "No, Quit",
+              customClass: {
+                icon: "no-border",
+              },
+            })
+            .then((result) => {
+              if (result.isConfirmed) {
+                updateInvitePlayAgainRequest({ playAgainRequested: false, playAgainAccepted: true }, gameInvite.id);
+                resumePlayAgain();
+              }
+              if (result.isDismissed) {
+                updateInvitePlayAgainRequest({ playAgainAccepted: false }, gameInvite.id);
+                quitBtnHandler();
+              }
+            });
         }
         //Notify play again requester if other player rejects
         if (doc.data().playAgainAccepted === false && doc.data().requester === localUser.name) {
-          Swal.fire({
-            title: "Player Quits!",
-            text: "Sorry pal. Maybe next time. Got to go!",
-            iconHtml: '<img src="/images/invite.png" />',
-            showCancelButton: false,
-            confirmButtonColor: "#d33",
-            confirmButtonText: "Quit",
-            customClass: {
-              icon: "no-border",
-            },
-          }).then((result) => {
-            if (result.isConfirmed) {
-              quitBtnHandler();
-            }
-          });
+          swalert
+            .fire({
+              title: "Player Quits!",
+              text: "Sorry, I can't play another game. Maybe next time.",
+              iconHtml: '<img src="/images/invite.png" />',
+              showCancelButton: false,
+              confirmButtonColor: "#d33",
+              confirmButtonText: "Quit",
+              customClass: {
+                icon: "no-border",
+              },
+            })
+            .then((result) => {
+              if (result.isConfirmed) {
+                quitBtnHandler();
+              }
+            });
         }
         if (doc.data().playAgainAccepted) {
           resumePlayAgain();
@@ -157,7 +162,28 @@ const Game = ({ endRemoteGame }) => {
       }
     );
 
+    ////Listen to remote player quiting the game
+    const unsub_listner8 = onSnapshot(
+      doc(ColRefInv, gameInvite.id, "gameSessionData", "playerQuits"),
+      (doc) => {
+        if (doc.data().playerQuits && doc.data().playerName !== localUser.name) {
+          if (isGameOver) {
+            swalert.fire("Thanks for Playing", "Remote Player left! Try joining another invite", "success");
+          } else {
+            swalert.fire("Oops!", "Player quits! The remote player exited the game. The game cannot be continued.", "info");
+          }
+
+          endRemoteGame();
+        }
+      },
+      (error) => {
+        console.error("There was an error in checking remote player quit activity:", error.message);
+        endRemoteGame();
+      }
+    );
+
     return () => {
+      unsub_listner8();
       unsub_listner7();
       unsub_listner6();
       unsub_listner5();
@@ -222,6 +248,9 @@ const Game = ({ endRemoteGame }) => {
       .catch((ex) => {
         console.error("Error removing player from an invite:", ex.message);
       });
+    if (gameInvite.invitedBy === localUser.name) {
+      updateInvitePlayerQuits({ playerQuits: true, playerName: gameInvite.invitedBy }, gameInvite.id);
+    }
     //reset game session
     setIsGameOver(false);
     setTurn(0);
@@ -346,7 +375,7 @@ const Game = ({ endRemoteGame }) => {
   const playAgainHandler = () => {
     //request other player to player again
     updateInvitePlayAgainRequest({ playAgainRequested: true, requester: localUser.name }, gameInvite.id);
-    Swal.fire(
+    swalert.fire(
       "Request Sent!",
       "We have sent a request to the remote player to join. If rejected, you will be notified. Stay in the game!",
       "question"

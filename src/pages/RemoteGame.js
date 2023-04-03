@@ -7,8 +7,6 @@ const RemoteGame = () => {
   const [gameInSession, setGameInSession] = useState(false);
   const appDataCtx = useContext(AppContext);
 
-  appDataCtx.joinedInvite && console.log("Current Game ID:", appDataCtx.joinedInvite.id);
-
   const endRemoteGameHandler = () => {
     setGameInSession(false);
   };

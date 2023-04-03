@@ -19,6 +19,7 @@ import {
   getMyInvite,
   removePlayerFromGameRoom,
   updateGameInSession,
+  updateInvitePlayerQuits,
 } from "../firebase";
 import { doc, onSnapshot } from "@firebase/firestore";
 import LocalStorageContext from "../store/localStorage-context";
@@ -298,10 +299,12 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
   //Handler for starting remote game invited by me
   const initiateMyRemoteGameHandler = (inviteId) => {
     if (myGameInviteJoiners > 1) {
+      updateInvitePlayerQuits({ playerQuits: false, playerName: null }, inviteId);
       updateGameInSession(inviteId, true)
         .then(() => {
           //Flushout previously stored sessions in the context store
           playerCtx.resetPlayers();
+
           //add players into the context store
           playerCtx.addPlayer(myGameInvite.room[0]);
           playerCtx.addPlayer(myGameInvite.room[1]);
