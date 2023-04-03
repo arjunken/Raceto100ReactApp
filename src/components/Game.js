@@ -167,10 +167,10 @@ const Game = ({ endRemoteGame }) => {
       doc(ColRefInv, gameInvite.id, "gameSessionData", "playerQuits"),
       (doc) => {
         if (doc.data().playerQuits && doc.data().playerName !== localUser.name) {
-          if (isGameOver) {
-            swalert.fire("Thanks for Playing", "Remote Player left! Try joining another invite", "success");
-          } else {
+          if (doc.data().playIncomplete) {
             swalert.fire("Oops!", "Player quits! The remote player exited the game. The game cannot be continued.", "info");
+          } else {
+            swalert.fire("Thanks for Playing", "Remote Player left! Try joining another invite", "success");
           }
 
           endRemoteGame();
@@ -249,7 +249,11 @@ const Game = ({ endRemoteGame }) => {
         console.error("Error removing player from an invite:", ex.message);
       });
     if (gameInvite.invitedBy === localUser.name) {
-      updateInvitePlayerQuits({ playerQuits: true, playerName: gameInvite.invitedBy }, gameInvite.id);
+      isGameOver && updateInvitePlayerQuits({ playerQuits: true, playerName: gameInvite.invitedBy, playIncomplete: false }, gameInvite.id);
+      !isGameOver && updateInvitePlayerQuits({ playerQuits: true, playerName: gameInvite.invitedBy, playIncomplete: true }, gameInvite.id);
+    } else {
+      isGameOver && updateInvitePlayerQuits({ playerQuits: true, playerName: localUser.name, playIncomplete: false }, gameInvite.id);
+      !isGameOver && updateInvitePlayerQuits({ playerQuits: true, playerName: localUser.name, playIncomplete: true }, gameInvite.id);
     }
     //reset game session
     setIsGameOver(false);
@@ -463,6 +467,7 @@ const Game = ({ endRemoteGame }) => {
               customIcons={customIcons}
               scores={[playersData[0].gameSessionData.prevScore, playersData[0].gameSessionData.runningScore]}
               rewards={[playersData[0].gameSessionData.goldEarned, playersData[0].gameSessionData.diamondEarned]}
+              target={targetScore}
             />
           </GameProgressBox>
         </Grid>
@@ -487,6 +492,7 @@ const Game = ({ endRemoteGame }) => {
               customIcons={customIcons}
               scores={[playersData[1].gameSessionData.prevScore, playersData[1].gameSessionData.runningScore]}
               rewards={[playersData[1].gameSessionData.goldEarned, playersData[1].gameSessionData.diamondEarned]}
+              target={targetScore}
             />
           </GameProgressBox>
         </Grid>

@@ -219,7 +219,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
 
   //Handlers for invites expiry
   const myGameInviteExpiryHandler = (inviteId) => {
-    if (myGameInviteJoiners > 1) {
+    if (myGameInviteJoiners <= 1) {
       setMyGameInvite(null);
       setPlayInProgress(false);
       deleteMyInvite(inviteId)
@@ -299,7 +299,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
   //Handler for starting remote game invited by me
   const initiateMyRemoteGameHandler = (inviteId) => {
     if (myGameInviteJoiners > 1) {
-      updateInvitePlayerQuits({ playerQuits: false, playerName: null }, inviteId);
+      updateInvitePlayerQuits({ playerQuits: false, playerName: null, playIncomplete: false }, inviteId);
       updateGameInSession(inviteId, true)
         .then(() => {
           //Flushout previously stored sessions in the context store
@@ -436,25 +436,25 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
           )}
         </Alert>
       </Snackbar>
-      <Snackbar
-        open={openSBAlert.inviteCancelled}
-        autoHideDuration={6000}
-        onClose={() => {
-          setOpenSBAlert({ ...openSBAlert, inviteCancelled: false });
-          setLastInviteRemoved(null);
-          setShowLoading(false);
-        }}
-      >
-        <Alert
+      {lastInviteRemoved && (
+        <Snackbar
+          open={openSBAlert.inviteCancelled}
+          autoHideDuration={6000}
           onClose={() => {
             setOpenSBAlert({ ...openSBAlert, inviteCancelled: false });
             setLastInviteRemoved(null);
             setShowLoading(false);
           }}
-          severity="warning"
-          sx={{ width: "100%" }}
         >
-          {lastInviteRemoved && (
+          <Alert
+            onClose={() => {
+              setOpenSBAlert({ ...openSBAlert, inviteCancelled: false });
+              setLastInviteRemoved(null);
+              setShowLoading(false);
+            }}
+            severity="warning"
+            sx={{ width: "100%" }}
+          >
             <Box sx={{ display: "flex", gap: 2, flexDirection: "row", justifyContent: "flex-start", alignItems: "center" }}>
               <Avatar
                 alt="avatar"
@@ -464,33 +464,34 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
               />
               <Typography>{lastInviteRemoved.invitedBy} cancelled the invite! Join another invite</Typography>
             </Box>
-          )}
-        </Alert>
-      </Snackbar>
-      <Snackbar
-        open={openSBAlert.dropJoin}
-        autoHideDuration={6000}
-        onClose={() => {
-          setOpenSBAlert({ ...openSBAlert, dropJoin: false });
-          setLastPlayerJoined(null);
-        }}
-      >
-        <Alert
+          </Alert>
+        </Snackbar>
+      )}
+
+      {lastPlayerJoined && (
+        <Snackbar
+          open={openSBAlert.dropJoin}
+          autoHideDuration={6000}
           onClose={() => {
             setOpenSBAlert({ ...openSBAlert, dropJoin: false });
             setLastPlayerJoined(null);
           }}
-          severity="warning"
-          sx={{ width: "100%" }}
         >
-          {lastPlayerJoined && (
+          <Alert
+            onClose={() => {
+              setOpenSBAlert({ ...openSBAlert, dropJoin: false });
+              setLastPlayerJoined(null);
+            }}
+            severity="warning"
+            sx={{ width: "100%" }}
+          >
             <Box sx={{ display: "flex", gap: 2, flexDirection: "row", justifyContent: "flex-start", alignItems: "center" }}>
               <Avatar alt="avatar" src={lastPlayerJoined.data.avatarUrl} sx={{ width: 56, height: 56, borderRadius: "50px" }} variant="square" />
               <Typography>{lastPlayerJoined.data.name} dropped your invite! Wait for another player to accept.</Typography>
             </Box>
-          )}
-        </Alert>
-      </Snackbar>
+          </Alert>
+        </Snackbar>
+      )}
     </AppContainer>
   );
 };

@@ -1,6 +1,7 @@
 import { Avatar, Box, Container, Tooltip, Typography } from "@mui/material";
 import SportsScoreRoundedIcon from "@mui/icons-material/SportsScoreRounded";
 import CountUp from "react-countup";
+import ModeStandbyIcon from "@mui/icons-material/ModeStandby";
 
 const GameScoreDisplay = (props) => {
   return (
@@ -17,7 +18,13 @@ const GameScoreDisplay = (props) => {
         <Tooltip title="Total score. When target score < 12, it only increases by number < 12. When target score < 6, it only increases by number < 6 of any one dice.">
           <SportsScoreRoundedIcon sx={{ width: 32, height: 32, ml: 2 }} />
         </Tooltip>
-        <CountUp start={props.scores[0]} end={props.scores[1]} delay={0} />
+        <Typography sx={{ typography: { sm: "h6", xs: "subtitle2" } }}>
+          <CountUp start={props.scores[0]} end={props.scores[1]} delay={0} />
+        </Typography>
+        <Box sx={{ ml: "auto", display: "inline-flex", color: "#e9c46a" }}>
+          <ModeStandbyIcon />
+          <Typography sx={{ typography: { sm: "h6", xs: "subtitle2" }, pl: 1 }}>{props.target}</Typography>
+        </Box>
       </Box>
     </Container>
   );

@@ -347,7 +347,6 @@ const removePlayerFromGameRoom = async (inviteId, player) => {
     await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remoteDiceRes"), { remoteDiceRes: null });
     await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playerTurn"), { whoseTurn: inviteSnap.data().room[0].data.name });
     await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { p1Wins: 0, p2Wins: 0 });
-    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playerQuits"), { playerQuits: true, playerName: player.data.name });
   }
 };
 

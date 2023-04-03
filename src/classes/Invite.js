@@ -32,7 +32,8 @@ export class Invite {
       requester: null,
       playAgainAccepted: null,
     });
-    await setDoc(doc(ColRefInv, this.id, "gameSessionData", "playerQuits"), { playerQuits: false, playerName: null });
+    await setDoc(doc(ColRefInv, this.id, "gameSessionData", "playerQuits"), { playerQuits: false, playerName: null, playIncomplete: false });
+    await setDoc(doc(ColRefInv, this.id, "gameSessionData", "autoRollOptions"), { p1: false, p2: false });
     await updateDoc(doc(colRefP, auth.currentUser.uid), {
       "privateData.inviteId": this.id,
       "privateData.joiningCode": joiningCode,
