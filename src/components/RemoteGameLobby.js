@@ -164,6 +164,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
       })
       .then((result) => {
         if (result.isConfirmed) {
+          setShowLoading([true, "Please wait while your invite is being created..."]);
           const inviteId = nanoid(20);
           const joiningCode = nanoid(6);
           setPlayInProgress(true);
@@ -175,6 +176,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
               setMyGameInvite(invite);
               //Store the flag in the context to tell other components that there is a open invite
               localStorageCtx.setData("raceto100AppData", "openInvite", inviteId);
+              setShowLoading([false]);
             })
             .catch((ex) => {
               console.error("Error publishing the invite", ex.message);

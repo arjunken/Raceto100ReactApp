@@ -1,4 +1,4 @@
-import { Box, Button, Container, Grid, LinearProgress, Link, Stack, Switch, Typography } from "@mui/material";
+import { Box, Button, Container, Grid, LinearProgress, Link, Typography } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import Chance from "chance";
 //App level imports
@@ -14,19 +14,17 @@ import {
   ColRefInv,
   deleteMyInvite,
   removePlayerFromGameRoom,
-  saveData,
   saveDiceResults,
   savePlayerGameData,
   saveRemoteGameData,
-  updateInvitePlayAgainAccept,
   updateInvitePlayAgainRequest,
   updateInvitePlayerQuits,
   updatePlayerTurn,
 } from "../firebase";
-import { useRef } from "react";
+
 import LocalStorageContext from "../store/localStorage-context";
 import AppContext from "../store/app-context";
-import { doc, onSnapshot, query, where } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import _ from "lodash";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
@@ -49,8 +47,6 @@ const Game = ({ endRemoteGame }) => {
   const [isGameOver, setIsGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
   const navigate = useNavigate();
-  const [autoRoll, setAutoRoll] = useState(false);
-  const switchState = useRef();
   const appDataCtx = useContext(AppContext);
   const swalert = withReactContent(Swal);
   const [showLoading, setShowLoading] = useState([false]);
@@ -172,6 +168,23 @@ const Game = ({ endRemoteGame }) => {
           } else {
             swalert.fire("Thanks for Playing", "Remote Player left! Try joining another invite", "success");
           }
+          removePlayerFromGameRoom(gameInvite.id, gameInvite.room[1])
+            .then(() => {
+              console.log("Player has been removed from the invite");
+              if (gameInvite.invitedBy === doc.data().playerName) {
+                deleteMyInvite(gameInvite.id)
+                  .then(() => {
+                    console.log("Invite has been deleted!");
+                    localStorageCtx.setData("raceto100AppData", "openInvite", null);
+                  })
+                  .catch((ex) => {
+                    console.error("Error deleting the invite", ex.message);
+                  });
+              }
+            })
+            .catch((ex) => {
+              console.error("Error removing player from an invite:", ex.message);
+            });
 
           endRemoteGame();
         }
@@ -198,9 +211,11 @@ const Game = ({ endRemoteGame }) => {
   };
 
   const handleBrowserTabClose = async () => {
-    if (playerCtx.players[0] !== null && playerCtx.players[1] !== null) {
-      console.log("Invite Data should be deleted");
-    }
+    updateDoc(doc(ColRefInv, gameInvite.id, "gameSessionData", "playerQuits"), {
+      playerQuits: true,
+      playerName: localUser.name,
+      playIncomplete: true,
+    });
   };
 
   useEffect(() => {
@@ -241,13 +256,6 @@ const Game = ({ endRemoteGame }) => {
 
   //Handle Quit Btn
   const quitBtnHandler = () => {
-    removePlayerFromGameRoom(gameInvite.id, gameInvite.room[1])
-      .then(() => {
-        console.log("Successfully removed from the invite");
-      })
-      .catch((ex) => {
-        console.error("Error removing player from an invite:", ex.message);
-      });
     if (gameInvite.invitedBy === localUser.name) {
       isGameOver && updateInvitePlayerQuits({ playerQuits: true, playerName: gameInvite.invitedBy, playIncomplete: false }, gameInvite.id);
       !isGameOver && updateInvitePlayerQuits({ playerQuits: true, playerName: gameInvite.invitedBy, playIncomplete: true }, gameInvite.id);
@@ -329,10 +337,10 @@ const Game = ({ endRemoteGame }) => {
     //Store playersData into FB to show progressbar animation to the remote player
     savePlayerGameData(playersData[turn].gameSessionData, turn, gameInvite.id);
 
-    if (turn === numberOfPlayers - 1) {
-      const autoRoll = switchState.current.firstChild.checked;
-      autoRoll && setTurn(0);
-    }
+    // if (turn === numberOfPlayers - 1) {
+    //   const autoRoll = switchState.current.firstChild.checked;
+    //   autoRoll && setTurn(0);
+    // }
     if (turn < numberOfPlayers - 1) {
       //Change WhoseTurn in firebase
       updatePlayerTurn(turn + 1, gameInvite.id);
@@ -434,10 +442,6 @@ const Game = ({ endRemoteGame }) => {
       </Box>
     );
   }
-  //Switch Handler
-  const switchHandler = (e) => {
-    e.target.checked ? setAutoRoll(true) : setAutoRoll(false);
-  };
 
   //Default component return
   return (
@@ -516,11 +520,6 @@ const Game = ({ endRemoteGame }) => {
       >
         {rollBtnState ? <Typography sx={{ color: "#505050", fontSize: "3rem", fontFamily: "Bubblegum Sans" }}>Wait..</Typography> : "Roll"}
       </Button>
-      <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ mt: 2 }}>
-        <Typography color="white">Manual Roll</Typography>
-        <Switch ref={switchState} onChange={switchHandler} size="large" />
-        <Typography color="white">Auto Roll</Typography>
-      </Stack>
       {showLoading && <PageLoading showLoading={showLoading[0]} msg={showLoading[1]} actionBtn={showLoading[2]} />}
     </Box>
   );
