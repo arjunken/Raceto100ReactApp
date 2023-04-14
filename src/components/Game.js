@@ -33,6 +33,11 @@ import PageLoading from "../layouts/PageLoading";
 const chance = new Chance();
 const passiveDice = globalVariables.default_dice[0];
 const activeDice = globalVariables.default_dice[1];
+const diceRollingSound = new Audio("/sounds/dice-rolling.wav");
+const diceResSound = new Audio("/sounds/dice-result.wav");
+const celebrateSound = new Audio("/sounds/celebrate" + Math.floor(Math.random() * 6 + 1) + ".wav");
+const goldCollectSound = new Audio("/sounds/coin-collect.wav");
+const diamondsCollectSound = new Audio("/sounds/diamonds-collect.wav");
 
 const Game = ({ endRemoteGame }) => {
   //Set States
@@ -277,6 +282,8 @@ const Game = ({ endRemoteGame }) => {
 
   //Handle Dice Rolls
   const rollBtnClickHandler = async () => {
+    //Play Audio
+    diceRollingSound.play();
     setGameMode(true);
     //set player roll btn disabled
     setRollBtnState(true);
@@ -301,6 +308,8 @@ const Game = ({ endRemoteGame }) => {
     await sleep(1200);
     //store the session data in Context
     setDiceScoreSum(diceResultsRed + diceResultsBlack);
+    //Play Dice Results sound
+    diceResSound.play();
     await sleep(1000);
     //Get the player game data
     playersData[turn].gameSessionData.prevScore = playersData[turn].gameSessionData.runningScore;
@@ -314,9 +323,11 @@ const Game = ({ endRemoteGame }) => {
     //Set Gold and Diamonds Earned
     if (diceResultsBlack === diceResultsRed) {
       playersData[turn].gameSessionData.goldEarned += 1;
+      goldCollectSound.play();
     }
     if (diceResultsBlack + diceResultsRed === 12) {
       playersData[turn].gameSessionData.diamondEarned += 1;
+      diamondsCollectSound.play();
     }
     //====
     if (playersData[turn].gameSessionData.runningScore >= targetScore) {
@@ -425,6 +436,8 @@ const Game = ({ endRemoteGame }) => {
   //Function to save data to the Firebase
   //Hanlde Gameover
   if (isGameOver) {
+    //Play Sound
+    celebrateSound.play();
     //Save Game Data to Firebase
     const uid = localStorageCtx.getData("raceto100AppData", "auth");
     const turnIndex = _.findIndex(gameInvite.room, { data: { name: localUser.name } });
