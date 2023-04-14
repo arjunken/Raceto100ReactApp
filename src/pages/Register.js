@@ -90,24 +90,25 @@ const Register = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setShowLoading([true, "Please wait while we setup your account...."]);
-    //Create a player object and store
-    const player = new Player(username);
-    player.data.email = email;
-    player.data.isRegistered = true;
+    // setShowLoading([true, "Please wait while we setup your account...."]);
+    // //Create a player object and store
+    // const player = new Player(username);
+    // player.data.email = email;
+    // player.data.isRegistered = true;
 
-    //Create the player account and data template
-    handleUserCreation(email, password, username, player.data, player.robodata, player.privateData)
-      .then((uid) => {
-        localStorageCtx.setData("raceto100AppData", "auth", uid);
-        console.log("User has been created successfully with UID: ", uid);
-        navigate("/profile");
-      })
-      .catch((ex) => {
-        console.error("There is an error registering user:", ex.message);
-        swalert.fire("Error!", "There is an existing account", "error");
-        setShowLoading([false]);
-      });
+    // //Create the player account and data template
+    // handleUserCreation(email, password, username, player.data, player.robodata, player.privateData)
+    //   .then((uid) => {
+    //     localStorageCtx.setData("raceto100AppData", "auth", uid);
+    //     console.log("User has been created successfully with UID: ", uid);
+    //     navigate("/profile");
+    //   })
+    //   .catch((ex) => {
+    //     console.error("There is an error registering user:", ex.message);
+    //     swalert.fire("Error!", "There is an existing account", "error");
+    //     setShowLoading([false]);
+    //   });
+    swalert.fire("Registration Cap Reached!", "The app is currently under Beta testing. Please try again later.", "info");
   };
 
   return (
