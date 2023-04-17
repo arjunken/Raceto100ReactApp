@@ -47,7 +47,8 @@ const auth = getAuth();
 const db = getFirestore();
 const colRefP = collection(db, "players");
 const colRefPn = collection(db, "playernames");
-const ColRefInv = collection(db, "invites");
+const colRefInv = collection(db, "invites");
+const colRefPo = collection(db, "playersonline");
 const storage = getStorage();
 const storageRef = ref(storage);
 const uploadsRef = ref(storage, "uploads");
@@ -75,8 +76,9 @@ export const handleUserCreation = async (email, password, username, playerData, 
   await updateDoc(doc(colRefPn, "unames"), { names: arrayUnion(username) });
   //Sign user in
   await signInWithEmailAndPassword(auth, email, password)
-    .then((cred) => {
+    .then(async (cred) => {
       uid = cred.user.uid;
+      await setDoc(doc(colRefPo, username), { name: username, avatarUrl: playerData.data.avatarUrl });
     })
     .catch((ex) => {
       throw new Error("Error signing in user:", ex.message);
@@ -93,15 +95,34 @@ export const handleUserCreation = async (email, password, username, playerData, 
 //Sign In users
 
 export const signInUser = async (email, password) => {
-  let uid = null;
-  const cred = await signInWithEmailAndPassword(auth, email, password)
-    .then((cred) => {
-      uid = cred.user.uid;
+  const uid = await signInWithEmailAndPassword(auth, email, password)
+    .then(async (cred) => {
+      const docSnap = await getDoc(doc(colRefP, cred.user.uid));
+      if (docSnap.exists()) {
+        await setDoc(doc(colRefPo, docSnap.data().playerData.name), {
+          name: docSnap.data().playerData.name,
+          avatarUrl: docSnap.data().playerData.avatarUrl,
+        });
+      } else {
+        throw new Error();
+      }
+      return cred.user.uid;
     })
     .catch((ex) => {
       throw new Error("Error signing in user:", ex.message);
     });
   return uid;
+};
+
+//Remove user from Online players list when signed out
+
+export const deregisterPlayersOnline = async (userId) => {
+  const docSnap = await getDoc(doc(colRefP, userId));
+  if (docSnap.exists()) {
+    await deleteDoc(doc(colRefPo, docSnap.data().playerData.name));
+  } else {
+    throw new Error("Error removing player from online list:");
+  }
 };
 
 //Save data after Game is over
@@ -319,7 +340,7 @@ const getMyInvite = async (uid) => {
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
     if (docSnap.data().privateData.inviteId !== "" && docSnap.data().privateData.inviteId !== null) {
-      const inviteRef = doc(ColRefInv, docSnap.data().privateData.inviteId);
+      const inviteRef = doc(colRefInv, docSnap.data().privateData.inviteId);
       const inviteSnap = await getDoc(inviteRef);
       if (inviteSnap.exists()) {
         return inviteSnap.data();
@@ -330,86 +351,86 @@ const getMyInvite = async (uid) => {
 
 //add player to the rooom
 const addPlayerToGameRoom = async (inviteId, player) => {
-  const inviteRef = doc(ColRefInv, inviteId);
+  const inviteRef = doc(colRefInv, inviteId);
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
-    await updateDoc(doc(ColRefInv, inviteId), { room: arrayUnion(player) });
+    await updateDoc(doc(colRefInv, inviteId), { room: arrayUnion(player) });
   }
 };
 
 //remove player from the rooom
 const removePlayerFromGameRoom = async (inviteId, player) => {
-  const inviteRef = doc(ColRefInv, inviteId);
+  const inviteRef = doc(colRefInv, inviteId);
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
-    await updateDoc(doc(ColRefInv, inviteId), { isGameInSession: false, room: arrayRemove(player) });
-    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: null, turn: 0 });
-    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remoteDiceRes"), { remoteDiceRes: null });
-    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playerTurn"), { whoseTurn: inviteSnap.data().room[0].data.name });
-    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { p1Wins: 0, p2Wins: 0 });
+    await updateDoc(doc(colRefInv, inviteId), { isGameInSession: false, room: arrayRemove(player) });
+    await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: null, turn: 0 });
+    await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "remoteDiceRes"), { remoteDiceRes: null });
+    await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "playerTurn"), { whoseTurn: inviteSnap.data().room[0].data.name });
+    await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "standings"), { p1Wins: 0, p2Wins: 0 });
   }
 };
 
 //Update Game in Session
 const updateGameInSession = async (inviteId, val) => {
-  const inviteRef = doc(ColRefInv, inviteId);
+  const inviteRef = doc(colRefInv, inviteId);
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
-    await updateDoc(doc(ColRefInv, inviteId), { isGameInSession: val });
+    await updateDoc(doc(colRefInv, inviteId), { isGameInSession: val });
   }
 };
 
 //Update player turn
 const updatePlayerTurn = async (index, inviteId) => {
-  const inviteRef = doc(ColRefInv, inviteId);
+  const inviteRef = doc(colRefInv, inviteId);
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
-    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playerTurn"), { whoseTurn: inviteSnap.data().room[index].data.name });
+    await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "playerTurn"), { whoseTurn: inviteSnap.data().room[index].data.name });
   }
 };
 
 //Save Dice Results
 const saveDiceResults = async (diceRes, inviteId) => {
-  const inviteRef = doc(ColRefInv, inviteId);
+  const inviteRef = doc(colRefInv, inviteId);
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
-    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remoteDiceRes"), { remoteDiceRes: diceRes });
+    await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "remoteDiceRes"), { remoteDiceRes: diceRes });
   }
 };
 
 //Save player game data
 const savePlayerGameData = async (pGameData, turn, inviteId) => {
-  const inviteRef = doc(ColRefInv, inviteId);
+  const inviteRef = doc(colRefInv, inviteId);
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
-    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: pGameData, turn: turn });
-    turn === 0 && (await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { p1RunningScore: pGameData.runningScore }));
-    turn === 1 && (await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { p2RunningScore: pGameData.runningScore }));
+    await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: pGameData, turn: turn });
+    turn === 0 && (await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "standings"), { p1RunningScore: pGameData.runningScore }));
+    turn === 1 && (await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "standings"), { p2RunningScore: pGameData.runningScore }));
     if (pGameData.winner) {
-      turn === 0 && (await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { p1Wins: increment(1) }));
-      turn === 1 && (await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "standings"), { p2Wins: increment(1) }));
-      await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: null, turn: 0 });
-      await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "remoteDiceRes"), { remoteDiceRes: null });
-      await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playerTurn"), { whoseTurn: inviteSnap.data().room[0].data.name });
+      turn === 0 && (await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "standings"), { p1Wins: increment(1) }));
+      turn === 1 && (await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "standings"), { p2Wins: increment(1) }));
+      await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "remotePlayerGameData"), { remotePlayerGameData: null, turn: 0 });
+      await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "remoteDiceRes"), { remoteDiceRes: null });
+      await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "playerTurn"), { whoseTurn: inviteSnap.data().room[0].data.name });
     }
   }
 };
 
 //Update play again flag for an invite
 const updateInvitePlayAgainRequest = async (data, inviteId) => {
-  const inviteRef = doc(ColRefInv, inviteId);
+  const inviteRef = doc(colRefInv, inviteId);
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
-    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playAgainRequested"), data);
+    await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "playAgainRequested"), data);
   }
 };
 
 //Update play again flag for an invite
 const updateInvitePlayerQuits = async (data, inviteId) => {
-  const inviteRef = doc(ColRefInv, inviteId);
+  const inviteRef = doc(colRefInv, inviteId);
   const inviteSnap = await getDoc(inviteRef);
   if (inviteSnap.exists()) {
-    await updateDoc(doc(ColRefInv, inviteId, "gameSessionData", "playerQuits"), data);
+    await updateDoc(doc(colRefInv, inviteId, "gameSessionData", "playerQuits"), data);
   }
 };
 
@@ -418,7 +439,7 @@ export {
   db,
   colRefP,
   colRefPn,
-  ColRefInv,
+  colRefInv,
   getMyInvite,
   deleteMyInvite,
   reAuthenticateUser,

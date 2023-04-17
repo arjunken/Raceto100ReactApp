@@ -1,7 +1,7 @@
 import { doc, onSnapshot } from "@firebase/firestore";
 import { Typography } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
-import { ColRefInv } from "../firebase";
+import { colRefInv } from "../firebase";
 import AppContext from "../store/app-context";
 
 const WaitingRoom = ({ joiners }) => {
@@ -10,7 +10,7 @@ const WaitingRoom = ({ joiners }) => {
 
   // useEffect(() => {
   //   const unsub_listner3 = onSnapshot(
-  //     doc(ColRefInv, inviteId),
+  //     doc(colRefInv, inviteId),
   //     (doc) => {
   //       setJoiners(doc.data().room.length);
   //       appDataCtx.setData("roomsize", doc.data().room.length);

@@ -13,7 +13,7 @@ import { nanoid } from "../globalVariables";
 import { Invite } from "../classes/Invite";
 import {
   addPlayerToGameRoom,
-  ColRefInv,
+  colRefInv,
   colRefP,
   deleteMyInvite,
   getMyInvite,
@@ -39,7 +39,6 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
   const [myGameInviteJoiners, setMyGameInviteJoiners] = useState(1);
   const [lastPlayerJoined, setLastPlayerJoined] = useState(null);
   const [lastInviteRemoved, setLastInviteRemoved] = useState(null);
-  const [gameInSession, setGameInSession] = useState(false);
   const swalert = withReactContent(Swal);
   const targetScore = localStorageCtx.getData("raceto100Target", "target");
   const [openSBAlert, setOpenSBAlert] = useState({
@@ -72,7 +71,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
   //Run UseEffect for listening to the new invites from Firebase invites collection
   useEffect(() => {
     const unsub_listner2 = onSnapshot(
-      ColRefInv,
+      colRefInv,
       (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
@@ -351,61 +350,71 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
         </Box>
 
         <Divider sx={{ width: "100%", my: 1 }} />
-        <Typography variant="subtitle1" sx={{ mx: "auto" }}>
-          My Invite
-        </Typography>
-        {myGameInvite ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
-            {myGameInviteJoiners > 1 ? (
-              <JoinedInviteCard invite={myGameInvite} initiateMyRemoteGame={() => initiateMyRemoteGameHandler(myGameInvite.id)} />
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, justifyContent: "space-between", alignItems: "start" }}>
+          <Box>
+            <Typography variant="subtitle1" sx={{ mx: "auto" }}>
+              My Invite
+            </Typography>
+            {myGameInvite ? (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "start", justifyContent: "center", mt: 2 }}>
+                {myGameInviteJoiners > 1 ? (
+                  <JoinedInviteCard invite={myGameInvite} initiateMyRemoteGame={() => initiateMyRemoteGameHandler(myGameInvite.id)} />
+                ) : (
+                  <InviteCard
+                    key={myGameInvite.id}
+                    invite={myGameInvite}
+                    joiners={myGameInviteJoiners}
+                    joiningCode={"fds4342"}
+                    initiateMyRemoteGame={() => initiateMyRemoteGameHandler(myGameInvite.id)}
+                    expiryHandlerSelf={() => myGameInviteExpiryHandler(myGameInvite.id)}
+                  />
+                )}
+              </Box>
             ) : (
-              <InviteCard
-                key={myGameInvite.id}
-                invite={myGameInvite}
-                joiners={myGameInviteJoiners}
-                joiningCode={"fds4342"}
-                initiateMyRemoteGame={() => initiateMyRemoteGameHandler(myGameInvite.id)}
-                expiryHandlerSelf={() => myGameInviteExpiryHandler(myGameInvite.id)}
-              />
+              <Alert severity="info" sx={{ mx: "auto" }}>
+                There are no invites from you. Create an invite.
+              </Alert>
+            )}
+
+            <Divider sx={{ width: "70%", mx: "auto" }} />
+            <Typography variant="subtitle1" sx={{ mx: "auto", mt: 2 }}>
+              Invites from Others
+            </Typography>
+            {_.isEmpty(privateInvites) ? (
+              <Alert severity="info" sx={{ mx: "auto" }}>
+                There are no invites from others. Wait for someone to invite.
+              </Alert>
+            ) : (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center", mt: 2 }}>
+                {privateInvites.map((invite) => {
+                  if (invite.invitedBy !== localUser.name) {
+                    if (invite.room.length > 1) {
+                      return <JoinedInviteCard key={invite.id} invite={invite} />;
+                    } else {
+                      return (
+                        <InviteCard
+                          key={invite.id}
+                          invite={invite}
+                          roomSize={invite.room.length}
+                          maxJoins={invite.maxJoins}
+                          myGameInvite={myGameInvite}
+                          expiryHandlerOthers={() => privateInvitesExpiryHandler(invite.id)}
+                          joinInviteHandler={() => joinInviteHandler(invite)}
+                        />
+                      );
+                    }
+                  }
+                })}
+              </Box>
             )}
           </Box>
-        ) : (
-          <Alert severity="info" sx={{ mx: "auto" }}>
-            There are no invites from you. Create an invite.
-          </Alert>
-        )}
-
-        <Divider sx={{ width: "70%", mx: "auto" }} />
-        <Typography variant="subtitle1" sx={{ mx: "auto" }}>
-          Invites from Others
-        </Typography>
-        {_.isEmpty(privateInvites) ? (
-          <Alert severity="info" sx={{ mx: "auto" }}>
-            There are no invites from others. Wait for someone to invite.
-          </Alert>
-        ) : (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
-            {privateInvites.map((invite) => {
-              if (invite.invitedBy !== localUser.name) {
-                if (invite.room.length > 1) {
-                  return <JoinedInviteCard key={invite.id} invite={invite} />;
-                } else {
-                  return (
-                    <InviteCard
-                      key={invite.id}
-                      invite={invite}
-                      roomSize={invite.room.length}
-                      maxJoins={invite.maxJoins}
-                      myGameInvite={myGameInvite}
-                      expiryHandlerOthers={() => privateInvitesExpiryHandler(invite.id)}
-                      joinInviteHandler={() => joinInviteHandler(invite)}
-                    />
-                  );
-                }
-              }
-            })}
+          <Box>
+            <Typography variant="subtitle1">Players Online</Typography>
+            <Paper elevation={0} sx={{ backgroundColor: "#edf6f9", mt: { xs: 2, md: 0 }, p: 2 }}>
+              <Typography>Show online users</Typography>
+            </Paper>
           </Box>
-        )}
+        </Box>
 
         {/* <Button variant="contained" onClick={() => navigate("/gamerobo")}>
           Click to Play

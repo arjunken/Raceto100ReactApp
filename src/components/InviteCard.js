@@ -21,7 +21,7 @@ const InviteCard = ({
       elevation={1}
       sx={{
         p: 2,
-        width: { xs: "80%", md: "70%" },
+        width: { xs: "100%", md: "100%" },
         display: "flex",
         justifyContent: "space-between",
         gap: 2,

@@ -5,7 +5,7 @@ import { useContext, useEffect, useState } from "react";
 import { Player } from "../classes/Player";
 import Navigation from "../components/Navigation";
 import PlayOptions from "../components/PlayOptions";
-import { auth, colRefP, deleteMyInvite } from "../firebase";
+import { auth, colRefP, deleteMyInvite, deregisterPlayersOnline } from "../firebase";
 import AppContainer from "../layouts/AppContainer";
 import PlayersContext from "../store/players-context";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +32,7 @@ const Profile = () => {
   const logoutHandler = () => {
     const openInvite = localStorageCtx.getData("raceto100AppData", "openInvite");
     const proceedSigningOut = () => {
+      deregisterPlayersOnline(userId);
       signOut(auth)
         .then(() => {
           setCurrentUserData(null);

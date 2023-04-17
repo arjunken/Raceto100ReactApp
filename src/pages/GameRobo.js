@@ -17,6 +17,11 @@ import LocalStorageContext from "../store/localStorage-context";
 const chance = new Chance();
 const passiveDice = globalVariables.default_dice[0];
 const activeDice = globalVariables.default_dice[1];
+const diceRollingSound = new Audio("/sounds/dice-rolling.wav");
+const diceResSound = new Audio("/sounds/dice-result.wav");
+const celebrateSound = new Audio("/sounds/celebrate" + Math.floor(Math.random() * 6 + 1) + ".wav");
+const goldCollectSound = new Audio("/sounds/coin-collect.wav");
+const diamondsCollectSound = new Audio("/sounds/diamonds-collect.wav");
 
 const GameRobo = () => {
   //Set States
@@ -117,6 +122,8 @@ const GameRobo = () => {
     let i = 0;
 
     do {
+      //Play Audio
+      diceRollingSound.play();
       setRDiceImg(globalVariables.red_dice_faces[0]);
       setBDiceImg(globalVariables.black_dice_faces[0]);
       await sleep(1500);
@@ -138,9 +145,11 @@ const GameRobo = () => {
       //Set Gold and Diamonds Earned
       if (diceResultsBlack === diceResultsRed) {
         playersData[i].gameSessionData.goldEarned += 1;
+        goldCollectSound.play();
       }
       if (diceResultsBlack + diceResultsRed === 12) {
         playersData[i].gameSessionData.diamondEarned += 1;
+        diamondsCollectSound.play();
       }
       //save players data to local storage
       setRDiceImg(globalVariables.red_dice_faces[diceResultsRed]);
@@ -150,6 +159,8 @@ const GameRobo = () => {
       await sleep(1200);
       //store the session data in Context
       setDiceScoreSum(diceResultsRed + diceResultsBlack);
+      //Play Dice Results sound
+      diceResSound.play();
       await sleep(1000);
       if (playersData[i].gameSessionData.runningScore >= targetScore) {
         setIsGameOver(true);
@@ -204,6 +215,8 @@ const GameRobo = () => {
   //Function to save data to the Firebase
   //Hanlde Gameover
   if (isGameOver) {
+    //Play celebrate sound
+    celebrateSound.play();
     //Save Game Data to Firebase
     const uid = localStorageCtx.getData("raceto100AppData", "auth");
     // const uid = searchParams.get("uid");
@@ -259,6 +272,7 @@ const GameRobo = () => {
               customIcons={customIcons}
               scores={[playersData[0].gameSessionData.prevScore, playersData[0].gameSessionData.runningScore]}
               rewards={[playersData[0].gameSessionData.goldEarned, playersData[0].gameSessionData.diamondEarned]}
+              target={targetScore}
             />
           </GameProgressBox>
         </Grid>
@@ -283,6 +297,7 @@ const GameRobo = () => {
               customIcons={customIcons}
               scores={[playersData[1].gameSessionData.prevScore, playersData[1].gameSessionData.runningScore]}
               rewards={[playersData[1].gameSessionData.goldEarned, playersData[1].gameSessionData.diamondEarned]}
+              target={targetScore}
             />
           </GameProgressBox>
         </Grid>

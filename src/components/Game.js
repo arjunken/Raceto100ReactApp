@@ -11,7 +11,7 @@ import PlayerAvatar from "../components/PlayerAvatar";
 import Gameover from "../components/Gameover";
 import { useNavigate } from "react-router-dom";
 import {
-  ColRefInv,
+  colRefInv,
   deleteMyInvite,
   removePlayerFromGameRoom,
   saveDiceResults,
@@ -66,7 +66,7 @@ const Game = ({ endRemoteGame }) => {
   useEffect(() => {
     //Listen to turn changes
     const unsub_listner4 = onSnapshot(
-      doc(ColRefInv, gameInvite.id, "gameSessionData", "playerTurn"),
+      doc(colRefInv, gameInvite.id, "gameSessionData", "playerTurn"),
       (doc) => {
         const turnIndex = _.findIndex(gameInvite.room, { data: { name: doc.data().whoseTurn } });
         setTurn(turnIndex);
@@ -82,7 +82,7 @@ const Game = ({ endRemoteGame }) => {
 
     ////Listen to dice results for remote players
     const unsub_listner5 = onSnapshot(
-      doc(ColRefInv, gameInvite.id, "gameSessionData", "remoteDiceRes"),
+      doc(colRefInv, gameInvite.id, "gameSessionData", "remoteDiceRes"),
       (doc) => {
         doc.data().remoteDiceRes && performRemoteDiceAnim(doc.data().remoteDiceRes);
       },
@@ -94,7 +94,7 @@ const Game = ({ endRemoteGame }) => {
 
     ////Listen to remote player game data changes
     const unsub_listner6 = onSnapshot(
-      doc(ColRefInv, gameInvite.id, "gameSessionData", "remotePlayerGameData"),
+      doc(colRefInv, gameInvite.id, "gameSessionData", "remotePlayerGameData"),
       (doc) => {
         doc.data().remotePlayerGameData && performRemoteBarAnim(doc.data().remotePlayerGameData, doc.data().turn);
       },
@@ -106,7 +106,7 @@ const Game = ({ endRemoteGame }) => {
 
     ///Listen to play again requests
     const unsub_listner7 = onSnapshot(
-      doc(ColRefInv, gameInvite.id, "gameSessionData", "playAgainRequested"),
+      doc(colRefInv, gameInvite.id, "gameSessionData", "playAgainRequested"),
       (doc) => {
         if (doc.data().playAgainRequested && doc.data().requester && doc.data().requester !== localUser.name) {
           swalert
@@ -165,7 +165,7 @@ const Game = ({ endRemoteGame }) => {
 
     ////Listen to remote player quiting the game
     const unsub_listner8 = onSnapshot(
-      doc(ColRefInv, gameInvite.id, "gameSessionData", "playerQuits"),
+      doc(colRefInv, gameInvite.id, "gameSessionData", "playerQuits"),
       (doc) => {
         if (doc.data().playerQuits && doc.data().playerName !== localUser.name) {
           if (doc.data().playIncomplete) {
@@ -216,7 +216,7 @@ const Game = ({ endRemoteGame }) => {
   };
 
   const handleBrowserTabClose = async () => {
-    updateDoc(doc(ColRefInv, gameInvite.id, "gameSessionData", "playerQuits"), {
+    updateDoc(doc(colRefInv, gameInvite.id, "gameSessionData", "playerQuits"), {
       playerQuits: true,
       playerName: localUser.name,
       playIncomplete: true,
