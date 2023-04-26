@@ -15,6 +15,7 @@ import {
   addPlayerToGameRoom,
   colRefInv,
   colRefP,
+  colRefPo,
   deleteMyInvite,
   getMyInvite,
   removePlayerFromGameRoom,
@@ -26,6 +27,7 @@ import LocalStorageContext from "../store/localStorage-context";
 import AppContext from "../store/app-context";
 import JoinedInviteCard from "./JoinedInviteCard";
 import { Player } from "../classes/Player";
+import OnlinePlayerCard from "./OnlinePlayerCard";
 
 const RemoteGameLobby = ({ startRemoteGame }) => {
   const playerCtx = useContext(PlayersContext);
@@ -34,6 +36,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
   const [myGameInvite, setMyGameInvite] = useState(null);
   const userId = localStorageCtx.getData("raceto100AppData", "auth");
   const [privateInvites, setPrivateInvites] = useState([]);
+  const [onlinePlayers, setOnlinePlayers] = useState([]);
   const [playInProgress, setPlayInProgress] = useState(false);
   const [showLoading, setShowLoading] = useState([false]);
   const [myGameInviteJoiners, setMyGameInviteJoiners] = useState(1);
@@ -78,10 +81,6 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
             setPrivateInvites((preInvites) => [...preInvites, change.doc.data()]);
           }
           if (change.type === "removed") {
-            const myroom = _.findIndex(change.doc.data().room, { data: { name: localUser.name } });
-            if (myroom > 0) {
-              displaySBAlert({ ...openSBAlert, inviteCancelled: true });
-            }
             setPrivateInvites((preInvites) => {
               return preInvites.filter((item) => {
                 return change.doc.data().id !== item.id;
@@ -136,8 +135,41 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
       }
     );
 
+    const unsub_listener1 = onSnapshot(
+      colRefPo,
+      (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            setOnlinePlayers((preOnlinePlayers) => [...preOnlinePlayers, change.doc.data()]);
+          }
+          if (change.type === "removed") {
+            setOnlinePlayers((preOnlinePlayers) => {
+              return preOnlinePlayers.filter((item) => {
+                return change.doc.data().id !== item.id;
+              });
+            });
+          }
+          if (change.type === "modified") {
+            setOnlinePlayers((preOnlinePlayers) => {
+              return preOnlinePlayers.map((item) => {
+                if (item.id !== change.doc.data().id) {
+                  return item;
+                } else {
+                  return change.doc.data();
+                }
+              });
+            });
+          }
+        });
+      },
+      (error) => {
+        console.error("There was an error in getting the online players list:", error.message);
+      }
+    );
+
     return () => {
       unsub_listner2();
+      unsub_listener1();
     };
   }, []);
 
@@ -355,6 +387,7 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
             <Typography variant="subtitle1" sx={{ mx: "auto" }}>
               My Invite
             </Typography>
+            <Divider sx={{ width: "100%", my: 1 }} />
             {myGameInvite ? (
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "start", justifyContent: "center", mt: 2 }}>
                 {myGameInviteJoiners > 1 ? (
@@ -375,11 +408,10 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
                 There are no invites from you. Create an invite.
               </Alert>
             )}
-
-            <Divider sx={{ width: "70%", mx: "auto" }} />
             <Typography variant="subtitle1" sx={{ mx: "auto", mt: 2 }}>
               Invites from Others
             </Typography>
+            <Divider sx={{ width: "100%", my: 1 }} />
             {_.isEmpty(privateInvites) ? (
               <Alert severity="info" sx={{ mx: "auto" }}>
                 There are no invites from others. Wait for someone to invite.
@@ -410,8 +442,10 @@ const RemoteGameLobby = ({ startRemoteGame }) => {
           </Box>
           <Box>
             <Typography variant="subtitle1">Players Online</Typography>
-            <Paper elevation={0} sx={{ backgroundColor: "#edf6f9", mt: { xs: 2, md: 0 }, p: 2 }}>
-              <Typography>Show online users</Typography>
+            <Paper elevation={0} sx={{ backgroundColor: "#edf6f9", mt: { xs: 2, md: 0 }, p: 1 }}>
+              {onlinePlayers.map((player, index) => {
+                return <OnlinePlayerCard key={index} name={player.name} avatarUrl={player.avatarUrl} />;
+              })}
             </Paper>
           </Box>
         </Box>

@@ -264,6 +264,13 @@ const Game = ({ endRemoteGame }) => {
     if (gameInvite.invitedBy === localUser.name) {
       isGameOver && updateInvitePlayerQuits({ playerQuits: true, playerName: gameInvite.invitedBy, playIncomplete: false }, gameInvite.id);
       !isGameOver && updateInvitePlayerQuits({ playerQuits: true, playerName: gameInvite.invitedBy, playIncomplete: true }, gameInvite.id);
+      deleteMyInvite(gameInvite.id)
+        .then(() => {
+          console.log("Your invite has been deleted!");
+        })
+        .catch((ex) => {
+          console.error("Error deleting your invite", ex.message);
+        });
     } else {
       isGameOver && updateInvitePlayerQuits({ playerQuits: true, playerName: localUser.name, playIncomplete: false }, gameInvite.id);
       !isGameOver && updateInvitePlayerQuits({ playerQuits: true, playerName: localUser.name, playIncomplete: true }, gameInvite.id);

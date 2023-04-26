@@ -30,6 +30,7 @@ import { initializeApp } from "firebase/app";
 import Swal from "sweetalert2";
 import { deleteObject, getDownloadURL, getStorage, listAll, ref, uploadBytes } from "firebase/storage";
 import { typeOf } from "react-is";
+import { nanoid } from "./globalVariables";
 
 //Initialize Firebase
 const firebaseConfig = {
@@ -78,7 +79,7 @@ export const handleUserCreation = async (email, password, username, playerData, 
   await signInWithEmailAndPassword(auth, email, password)
     .then(async (cred) => {
       uid = cred.user.uid;
-      await setDoc(doc(colRefPo, username), { name: username, avatarUrl: playerData.data.avatarUrl });
+      await setDoc(doc(colRefPo, uid), { name: username, avatarUrl: playerData.data.avatarUrl });
     })
     .catch((ex) => {
       throw new Error("Error signing in user:", ex.message);
@@ -99,7 +100,8 @@ export const signInUser = async (email, password) => {
     .then(async (cred) => {
       const docSnap = await getDoc(doc(colRefP, cred.user.uid));
       if (docSnap.exists()) {
-        await setDoc(doc(colRefPo, docSnap.data().playerData.name), {
+        await setDoc(doc(colRefPo, cred.user.uid), {
+          id: nanoid(5),
           name: docSnap.data().playerData.name,
           avatarUrl: docSnap.data().playerData.avatarUrl,
         });
@@ -117,12 +119,7 @@ export const signInUser = async (email, password) => {
 //Remove user from Online players list when signed out
 
 export const deregisterPlayersOnline = async (userId) => {
-  const docSnap = await getDoc(doc(colRefP, userId));
-  if (docSnap.exists()) {
-    await deleteDoc(doc(colRefPo, docSnap.data().playerData.name));
-  } else {
-    throw new Error("Error removing player from online list:");
-  }
+  await deleteDoc(doc(colRefPo, userId));
 };
 
 //Save data after Game is over
@@ -269,6 +266,9 @@ export const updateUsername = async (oldName, newName) => {
   await updateProfile(auth.currentUser, {
     displayName: newName,
   });
+  await updateDoc(doc(colRefPo, auth.currentUser.uid), {
+    name: newName,
+  });
   return;
 };
 
@@ -286,6 +286,9 @@ export const updateUserPassword = async (pwd) => {
 //Update Avatar
 export const updateAvatar = async (avatarUrl) => {
   await updateDoc(doc(colRefP, auth.currentUser.uid), { "playerData.avatarUrl": avatarUrl });
+  await updateDoc(doc(colRefPo, auth.currentUser.uid), {
+    avatarUrl: avatarUrl,
+  });
 };
 
 //Send Email Verification
@@ -440,6 +443,7 @@ export {
   colRefP,
   colRefPn,
   colRefInv,
+  colRefPo,
   getMyInvite,
   deleteMyInvite,
   reAuthenticateUser,
