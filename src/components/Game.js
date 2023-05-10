@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import {
   colRefInv,
   deleteMyInvite,
+  getGameStandings,
   removePlayerFromGameRoom,
   saveDiceResults,
   savePlayerGameData,
@@ -55,6 +56,7 @@ const Game = ({ endRemoteGame }) => {
   const appDataCtx = useContext(AppContext);
   const swalert = withReactContent(Swal);
   const [showLoading, setShowLoading] = useState([false]);
+  const [gameStandings, setGameStandings] = useState(null);
 
   // const [searchParams] = useSearchParams();
 
@@ -266,6 +268,7 @@ const Game = ({ endRemoteGame }) => {
       !isGameOver && updateInvitePlayerQuits({ playerQuits: true, playerName: gameInvite.invitedBy, playIncomplete: true }, gameInvite.id);
       deleteMyInvite(gameInvite.id)
         .then(() => {
+          localStorageCtx.setData("raceto100AppData", "openInvite", null);
           console.log("Your invite has been deleted!");
         })
         .catch((ex) => {
@@ -348,8 +351,11 @@ const Game = ({ endRemoteGame }) => {
       //Store playersData into FB to show progressbar animation to the remote player
       savePlayerGameData(playersData[turn].gameSessionData, turn, gameInvite.id);
       await sleep(1200);
-      setIsGameOver(true);
-      setGameMode(false);
+      getGameStandings(gameInvite.id).then((wins) => {
+        setGameStandings(wins);
+        setIsGameOver(true);
+        setGameMode(false);
+      });
       return;
     }
     //Store playersData into FB to show progressbar animation to the remote player
@@ -397,7 +403,10 @@ const Game = ({ endRemoteGame }) => {
         index: t,
       });
       await sleep(1000);
-      setIsGameOver(true);
+      getGameStandings(gameInvite.id).then((wins) => {
+        setGameStandings(wins);
+        setIsGameOver(true);
+      });
     }
   };
 
@@ -458,7 +467,14 @@ const Game = ({ endRemoteGame }) => {
         <Button type="button" variant="contained" onClick={quitBtnHandler} color="error" sx={{ ml: 2 }}>
           Quit
         </Button>
-        <Gameover winner={winner.name} index={winner.index} targetScore={targetScore} />
+        <Gameover
+          winner={winner.name}
+          index={winner.index}
+          targetScore={targetScore}
+          p1Wins={gameStandings.p1Wins}
+          p2Wins={gameStandings.p2Wins}
+          invite={gameInvite}
+        />
       </Box>
     );
   }

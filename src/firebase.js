@@ -419,6 +419,19 @@ const savePlayerGameData = async (pGameData, turn, inviteId) => {
   }
 };
 
+const getGameStandings = async (inviteId) => {
+  const docRef = doc(colRefInv, inviteId, "gameSessionData", "standings");
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return {
+      p1Wins: docSnap.data().p1Wins,
+      p2Wins: docSnap.data().p2Wins,
+    };
+  } else {
+    return null;
+  }
+};
+
 //Update play again flag for an invite
 const updateInvitePlayAgainRequest = async (data, inviteId) => {
   const inviteRef = doc(colRefInv, inviteId);
@@ -455,4 +468,5 @@ export {
   savePlayerGameData,
   updateInvitePlayAgainRequest,
   updateInvitePlayerQuits,
+  getGameStandings,
 };

@@ -39,7 +39,7 @@ const columns = [
 
 const options = {
   responsiveLayout: "collapse",
-  layout: "fitDataFill",
+  layout: "fitColumns",
   pagination: "local",
   paginationSize: 3,
   paginationSizeSelector: [3, 6, 8, 10],
@@ -59,13 +59,15 @@ const Scoreboard = () => {
         docs.forEach((doc) => {
           // doc.data() is never undefined for query doc snapshots
           // setPlayersData(doc.data());
-          setPlayersData((preData) => [...preData, doc.data()]);
+          setPlayersData((preData) => [...preData, doc.data().playerData]);
         });
       })
       .catch((err) => {
         console.log("Error getting the players data:", err);
       });
   }, []);
+
+  console.log(playersData);
 
   return (
     <AppContainer>
