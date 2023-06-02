@@ -102,7 +102,7 @@ const Home = () => {
               <TextField
                 id="uniqueName"
                 name="uniqueName"
-                label="Usernames"
+                label="Username"
                 onKeyUp={inputValidator}
                 variant="outlined"
                 required
