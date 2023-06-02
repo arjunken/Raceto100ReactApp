@@ -5,8 +5,8 @@ body {
   font-family: -apple-system, fuzzy bubbles,'Bubblegum Sans', 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
-  background-color:#232931;
-  background-image: url('/public/gifs/stars.gif');
+  background-color:#282642;
+  background-image: url('/public/gifs/stars.gif'); 
   background-repeat: repeat;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

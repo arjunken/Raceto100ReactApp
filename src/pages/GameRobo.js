@@ -40,9 +40,14 @@ const GameRobo = () => {
   const [autoRoll, setAutoRoll] = useState(false);
   const switchState = useRef();
   const [playersDataInSession, setPlayersDataInSession] = useState(localStorageCtx.getData("raceto100LocalGame", "playersDataInSession"));
-  let gameEnded = false;
+  let gameStandings = localStorageCtx.getData("raceto100GameStandings", "gameStandings");
+  if (!gameStandings) {
+    gameStandings = {
+      p1Wins: 0,
+      p2Wins: 0,
+    };
+  }
   // const [searchParams] = useSearchParams();
-
   const handleTabClose = (event) => {
     event.preventDefault();
     event.returnValue = "";
@@ -51,9 +56,11 @@ const GameRobo = () => {
   const handleBrowserTabClose = async () => {
     if (playerCtx.players[0] !== null && playerCtx.players[1] !== null) {
       localStorageCtx.setData("raceto100LocalGame", "playersDataInSession", [playersData[0], playersData[1]]);
+      localStorageCtx.clearData("raceto100GameStandings");
     }
     if (Object.keys(winner).length > 0) {
       localStorageCtx.setData("raceto100LocalGame", "gameWinner", winner);
+      localStorageCtx.clearData("raceto100GameStandings");
     }
   };
 
@@ -110,6 +117,7 @@ const GameRobo = () => {
     setDiceScoreSum(0);
     setIsGameOver(false);
     setWinner(null);
+    localStorageCtx.clearData("raceto100GameStandings");
     navigate("/");
   };
 
@@ -226,6 +234,8 @@ const GameRobo = () => {
     //Store Data locally
     localStorageCtx.setData("raceto100LocalGame", "playersDataInSession", [playersDataInSession[0], playersDataInSession[1]]);
     localStorageCtx.setData("raceto100LocalGame", "gameWinner", winner);
+    winner.index === 0 ? gameStandings.p1Wins++ : gameStandings.p2Wins++;
+    localStorageCtx.setData("raceto100GameStandings", "gameStandings", gameStandings);
 
     return (
       <Box sx={{ textAlign: "center" }}>
@@ -235,7 +245,13 @@ const GameRobo = () => {
         <Button type="button" variant="contained" onClick={quitBtnHandler} color="error" sx={{ ml: 2 }}>
           Quit
         </Button>
-        <Gameover winner={winner.name} index={winner.index} targetScore={targetScore} />
+        <Gameover
+          winner={winner.name}
+          index={winner.index}
+          targetScore={targetScore}
+          p1Wins={gameStandings ? gameStandings.p1Wins : 0}
+          p2Wins={gameStandings ? gameStandings.p2Wins : 0}
+        />
       </Box>
     );
   }

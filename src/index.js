@@ -13,7 +13,6 @@ import { PlayersContextProvider } from "./store/players-context";
 import "./firebase";
 import { LocalStorageContextProvider } from "./store/localStorage-context";
 import { AppContextProvider } from "./store/app-context";
-
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(

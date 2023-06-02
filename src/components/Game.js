@@ -1,4 +1,4 @@
-import { Box, Button, Container, Grid, LinearProgress, Link, Typography } from "@mui/material";
+import { Alert, Box, Button, Container, Grid, LinearProgress, Link, Snackbar, Typography } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import Chance from "chance";
 //App level imports
@@ -57,6 +57,10 @@ const Game = ({ endRemoteGame }) => {
   const swalert = withReactContent(Swal);
   const [showLoading, setShowLoading] = useState([false]);
   const [gameStandings, setGameStandings] = useState(null);
+  const [open, setOpen] = useState({
+    state: false,
+    msg: "",
+  });
 
   // const [searchParams] = useSearchParams();
 
@@ -414,11 +418,7 @@ const Game = ({ endRemoteGame }) => {
   const playAgainHandler = () => {
     //request other player to player again
     updateInvitePlayAgainRequest({ playAgainRequested: true, requester: localUser.name }, gameInvite.id);
-    swalert.fire(
-      "Request Sent!",
-      "We have sent a request to the remote player to join. If rejected, you will be notified. Stay in the game!",
-      "question"
-    );
+    setOpen({ state: true, msg: "Request Sent to the remote player. Please wait!" });
     // setShowLoading([true, "Please wait while the remote player start the game session..."]);
   };
 
@@ -478,6 +478,14 @@ const Game = ({ endRemoteGame }) => {
       </Box>
     );
   }
+
+  const handleClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+
+    setOpen({ state: false, msg: "" });
+  };
 
   //Default component return
   return (
@@ -557,6 +565,11 @@ const Game = ({ endRemoteGame }) => {
         {rollBtnState ? <Typography sx={{ color: "#505050", fontSize: "3rem", fontFamily: "Bubblegum Sans" }}>Wait..</Typography> : "Roll"}
       </Button>
       {showLoading && <PageLoading showLoading={showLoading[0]} msg={showLoading[1]} actionBtn={showLoading[2]} />}
+      <Snackbar open={open.state} autoHideDuration={6000} onClose={handleClose}>
+        <Alert onClose={handleClose} severity="success" sx={{ width: "100%" }}>
+          {open.msg}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

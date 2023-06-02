@@ -38,15 +38,31 @@ const Gameover = ({ winner, index, targetScore, p1Wins, p2Wins, invite }) => {
           backgroundColor: "#edf6f9",
         }}
       >
-        <Avatar alt="avatar" src={invite.room[0].data.avatarUrl} sx={{ width: 56, height: 56, borderRadius: "50px" }} variant="square" />
-        <Typography sx={{ mr: "auto" }}> {invite.room[0].data.name}</Typography>
-        <Box sx={{ display: "inline-flex", alignItems: "center" }}>
-          <Typography variant="h2">
-            {p1Wins} - {p2Wins}
-          </Typography>
-        </Box>
-        <Typography sx={{ ml: "auto" }}> {invite.room[1].data.name}</Typography>
-        <Avatar alt="avatar" src={invite.room[1].data.avatarUrl} sx={{ width: 56, height: 56, borderRadius: "50px" }} variant="square" />
+        {invite ? (
+          <>
+            <Avatar alt="avatar" src={invite.room[0].data.avatarUrl} sx={{ width: 56, height: 56, borderRadius: "50px" }} variant="square" />
+            <Typography sx={{ mr: "auto" }}> {invite.room[0].data.name}</Typography>
+            <Box sx={{ display: "inline-flex", alignItems: "center" }}>
+              <Typography variant="h2">
+                {p1Wins} - {p2Wins}
+              </Typography>
+            </Box>
+            <Typography sx={{ ml: "auto" }}> {invite.room[1].data.name}</Typography>
+            <Avatar alt="avatar" src={invite.room[1].data.avatarUrl} sx={{ width: 56, height: 56, borderRadius: "50px" }} variant="square" />
+          </>
+        ) : (
+          <>
+            <Avatar alt="avatar" src={players[0].data.avatarUrl} sx={{ width: 56, height: 56, borderRadius: "50px" }} variant="square" />
+            <Typography sx={{ mr: "auto" }}> {players[0].data.name}</Typography>
+            <Box sx={{ display: "inline-flex", alignItems: "center" }}>
+              <Typography variant="h2">
+                {p1Wins} - {p2Wins}
+              </Typography>
+            </Box>
+            <Typography sx={{ ml: "auto" }}> {players[1].data.name}</Typography>
+            <Avatar alt="avatar" src={players[1].data.avatarUrl} sx={{ width: 56, height: 56, borderRadius: "50px" }} variant="square" />
+          </>
+        )}
       </Paper>
     </Box>
   );
