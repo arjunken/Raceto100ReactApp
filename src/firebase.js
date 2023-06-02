@@ -77,19 +77,19 @@ export const handleUserCreation = async (email, password, username, playerData, 
   await updateDoc(doc(colRefPn, "unames"), { names: arrayUnion(username) });
   //Sign user in
   await signInWithEmailAndPassword(auth, email, password)
-    .then(async (cred) => {
+    .then((cred) => {
       uid = cred.user.uid;
-      await setDoc(doc(colRefPo, uid), { name: username, avatarUrl: playerData.data.avatarUrl });
+      setDoc(doc(colRefPo, uid), { name: username, avatarUrl: playerData.avatarUrl });
+      //Create document in players collection
+      setDoc(doc(colRefP, uid), {
+        playerData: playerData,
+        roboData: playerRobodata,
+        privateData: playerPrivateData,
+      });
     })
     .catch((ex) => {
       throw new Error("Error signing in user:", ex.message);
     });
-  //Create document in players collection
-  await setDoc(doc(colRefP, uid), {
-    playerData: playerData,
-    roboData: playerRobodata,
-    privateData: playerPrivateData,
-  });
   return uid;
 };
 
